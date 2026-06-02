@@ -1,0 +1,286 @@
+{
+  "features": [
+    {
+      "id": "firebase-setup",
+      "priority": 1,
+      "area": "infrastructure",
+      "title": "Firebase project setup",
+      "user_visible_behavior": "App connects to Firebase; Firestore, Auth, Storage, and Cloud Functions are all reachable from the mobile app",
+      "status": "not_started",
+      "verification": [
+        "Run `firebase projects:list` and confirm the project appears",
+        "Run `firebase deploy --only firestore:rules,firestore:indexes` with no errors",
+        "Open mobile app; confirm Firebase initialises without console errors"
+      ],
+      "evidence": "",
+      "notes": "Must be completed before any other feature. Deploy Firestore indexes and security rules as part of this step."
+    },
+    {
+      "id": "auth",
+      "priority": 2,
+      "area": "auth",
+      "title": "User registration and login",
+      "user_visible_behavior": "User can sign up with email/password or continue anonymously; `currentUser` is non-null after login; user document created in Firestore `users` collection",
+      "status": "not_started",
+      "verification": [
+        "Register a new user with email + password; confirm success toast",
+        "Check Firebase Auth console — user appears",
+        "Check Firestore `users` collection — document created with uid, role='resident', reportCount=0",
+        "Log out and log back in; session persists"
+      ],
+      "evidence": "",
+      "notes": "Anonymous auth is acceptable for the demo but creates a `users` doc the same way."
+    },
+    {
+      "id": "home-location",
+      "priority": 3,
+      "area": "auth",
+      "title": "User home location setup",
+      "user_visible_behavior": "On first login, user is prompted to set home location (auto-filled from GPS, editable on map). `homeGeohash` is written to the Firestore user document. Without this, FCM alerts cannot be targeted.",
+      "status": "not_started",
+      "verification": [
+        "First login → home location prompt appears",
+        "Tap 'Use my location' → GPS coordinate auto-fills",
+        "Confirm → Firestore user document has `homeLat`, `homeLng`, `homeGeohash` set",
+        "Navigate to Profile and edit home location → Firestore updates"
+      ],
+      "evidence": "",
+      "notes": "Critical path for push notifications. homeGeohash must be set or users never receive alerts."
+    },
+    {
+      "id": "report-submit",
+      "priority": 4,
+      "area": "reporting",
+      "title": "Flood report submission",
+      "user_visible_behavior": "User taps Report button; GPS auto-fills location; user selects depth; tapping Submit writes a document to Firestore `reports` collection; ConfirmToast appears; pin appears on map within ~15 seconds",
+      "status": "not_started",
+      "verification": [
+        "Tap Report button → ReportSheet slides up",
+        "GPS location auto-fills (latitude + longitude shown)",
+        "Select each depth option (ankle/knee/waist/chest) — color changes correctly per DEPTH_CONFIG",
+        "Tap Submit → ConfirmToast appears",
+        "Check Firestore `reports` collection — document created with correct fields: lat, lng, geohash, depth, userId, status='pending', trustScore=60, corroborationCount=1, expiresAt=reportedAt+6h",
+        "Confirm `onReportCreate` Cloud Function ran (check Firebase Function logs)"
+      ],
+      "evidence": "",
+      "notes": "geohash must use precision 7. expiresAt must be exactly reportedAt + 6 hours."
+    },
+    {
+      "id": "live-map",
+      "priority": 5,
+      "area": "map",
+      "title": "Live map with real-time flood pins",
+      "user_visible_behavior": "Map screen shows colored pins for all active (non-expired) reports. Pins update in real time via Firestore listener. Pin color matches DEPTH_CONFIG. Tapping a pin shows depth, time, and upvote/downvote buttons.",
+      "status": "not_started",
+      "verification": [
+        "Open map screen — no errors in console",
+        "Submit a test report from a second device/account → pin appears on map without refresh",
+        "Verify pin color: ankle=amber, knee=coral, waist=red, chest=darkred",
+        "Expire a report manually (set expiresAt to now) → pin disappears within one listener cycle",
+        "Tap a pin → detail sheet shows depth label, time since report"
+      ],
+      "evidence": "",
+      "notes": "useReports hook must filter by status in ['pending','confirmed'] and expiresAt > now()."
+    },
+    {
+      "id": "corroboration",
+      "priority": 6,
+      "area": "reporting",
+      "title": "Corroboration counter and confirmed status",
+      "user_visible_behavior": "When 3 independent reports arrive within 500m and 30 minutes of each other, the earliest report's status changes to 'confirmed' and its pin changes appearance (e.g. solid fill vs outline). `corroborationCount` on each report reflects self-inclusive count.",
+      "status": "not_started",
+      "verification": [
+        "Submit 3 reports from 3 different user accounts within 500m (use simulated coordinates if needed)",
+        "Check Firestore — third report triggers status='confirmed' on the cluster",
+        "Verify corroborationCount = nearby.length + 1 on each report doc",
+        "Confirm confirmed pin has distinct visual state on map"
+      ],
+      "evidence": "",
+      "notes": "corroborationCount is self-inclusive (own report + nearby). Threshold is >= 3. onReportCreate must query within 500m radius and 30-minute window."
+    },
+    {
+      "id": "severity-fastpath",
+      "priority": 7,
+      "area": "notifications",
+      "title": "Severity fast-path preliminary alert",
+      "user_visible_behavior": "A single waist or chest depth report with trustScore >= 65 immediately triggers a push notification to nearby users, labelled 'Unverified report nearby'. This fires without waiting for 3 corroborations.",
+      "status": "not_started",
+      "verification": [
+        "Submit a 'chest' depth report from a fresh account (trustScore starts at 60; no penalties should apply for an on-road, rainy-day submission → trustScore >= 65)",
+        "Second device within 2km receives FCM notification within ~10 seconds",
+        "Notification title includes 'Unverified' or 'Preliminary' label",
+        "Check Cloud Function logs — notifyNearby called with preliminary=true"
+      ],
+      "evidence": "",
+      "notes": "trustScore = 60 base. If no GPS penalty and no weather penalty, score stays at 60 — below the 65 threshold. Demo setup must ensure at least one check passes (e.g. simulate rainfall > 1mm). Consider lowering threshold to 60 or adjusting base score to 70 if demo conditions are dry."
+    },
+    {
+      "id": "push-notifications",
+      "priority": 8,
+      "area": "notifications",
+      "title": "FCM push notifications on confirmed reports",
+      "user_visible_behavior": "When a report reaches confirmed status, all users with homeGeohash within 2km receive an FCM push notification. Tapping the notification opens the map centered on the report.",
+      "status": "not_started",
+      "verification": [
+        "Set homeGeohash on test user within 2km of test report location",
+        "Trigger confirmation (3 corroborating reports)",
+        "FCM notification arrives on test device within ~5 seconds",
+        "Notification payload contains: street, depth, reportedAt, reportId",
+        "Tap notification → app opens and map centers on the confirmed report",
+        "Test user outside 2km does NOT receive notification"
+      ],
+      "evidence": "",
+      "notes": "Query users by homeGeohash range using geohashQueryBounds. Send to all fcmTokens arrays (multi-token support). Handle stale tokens gracefully (FCM returns UNREGISTERED error — remove that token from the array)."
+    },
+    {
+      "id": "auto-expiry",
+      "priority": 9,
+      "area": "infrastructure",
+      "title": "Report auto-expiry (6 hours)",
+      "user_visible_behavior": "Reports older than 6 hours automatically disappear from the live map. The scheduled Cloud Function runs every 30 minutes and sets status='expired' on overdue reports.",
+      "status": "not_started",
+      "verification": [
+        "Deploy `expireReports` scheduled function (every 30 minutes)",
+        "Manually set a report's expiresAt to 1 minute ago in Firestore",
+        "Wait for next scheduled run (or manually trigger via Firebase console)",
+        "Confirm report status = 'expired' in Firestore",
+        "Confirm pin disappears from live map"
+      ],
+      "evidence": "",
+      "notes": "For demo, manually trigger the function rather than waiting 30 minutes. The live map query must filter expiresAt > Timestamp.now()."
+    },
+    {
+      "id": "upvote-downvote",
+      "priority": 10,
+      "area": "reporting",
+      "title": "Still flooded / Looks clear upvote and downvote",
+      "user_visible_behavior": "Tapping a map pin shows upvote ('Still flooded') and downvote ('Looks clear') buttons. Tapping increments the corresponding counter on the Firestore document. Counts update in real time.",
+      "status": "not_started",
+      "verification": [
+        "Tap a pin → detail sheet shows current upvote and downvote counts",
+        "Tap 'Still flooded' → Firestore upvotes field increments by 1",
+        "Tap 'Looks clear' → Firestore downvotes field increments by 1",
+        "Second device sees updated counts without refresh",
+        "Firestore security rules only allow upvotes/downvotes to be updated (not other fields)"
+      ],
+      "evidence": "",
+      "notes": "Use FieldValue.increment(1) to avoid race conditions. Firestore security rule must restrict update to only ['upvotes','downvotes'] keys."
+    },
+    {
+      "id": "disputed-status",
+      "priority": 11,
+      "area": "reporting",
+      "title": "Disputed status trigger",
+      "user_visible_behavior": "When a report accumulates downvotes > upvotes + 5 AND downvotes >= 3, an onUpdate Cloud Function sets its status to 'disputed'. Disputed reports show a different visual state on the map.",
+      "status": "not_started",
+      "verification": [
+        "Set a report to upvotes=0, downvotes=3 via Firestore console",
+        "Confirm onUpdate trigger fires and sets status='disputed'",
+        "Set upvotes=10, downvotes=20 → status='disputed' (20 > 10+5 and 20>=3)",
+        "Set upvotes=10, downvotes=14 → status stays unchanged (14 is not > 10+5=15)",
+        "Map shows disputed pins with distinct visual (e.g. grey or strikethrough)"
+      ],
+      "evidence": "",
+      "notes": "Implement as a Firestore onUpdate trigger inside notifyNearby.ts or a new disputeCheck.ts function. Logic: if (downvotes > upvotes + 5 && downvotes >= 3) set status = 'disputed'."
+    },
+    {
+      "id": "photo-upload",
+      "priority": 20,
+      "area": "reporting",
+      "title": "Optional photo attachment on report",
+      "user_visible_behavior": "After selecting depth, user can optionally add a photo (camera or gallery). Photo uploads to Firebase Storage. photoUrl is stored on the report document.",
+      "status": "not_started",
+      "verification": [
+        "Tap photo icon in ReportSheet → camera/gallery picker opens",
+        "Select a photo → thumbnail previews in the form",
+        "Submit → photo uploaded to Firebase Storage, photoUrl set on Firestore document",
+        "Photo visible when tapping the pin detail"
+      ],
+      "evidence": "",
+      "notes": "Nice-to-have for demo polish. Required before claude-vision feature."
+    },
+    {
+      "id": "claude-vision",
+      "priority": 21,
+      "area": "verification",
+      "title": "Claude Vision image verification badge",
+      "user_visible_behavior": "Reports with photos show a verification badge: green checkmark (YES), red X (NO), or grey question mark (UNCERTAIN/null). Badge updates asynchronously after Claude Vision responds.",
+      "status": "not_started",
+      "verification": [
+        "Submit a report with a clear flood photo → photoVerified becomes true within ~10s",
+        "Submit a report with a non-flood photo (e.g. clear road) → photoVerified becomes false",
+        "Submit a report with an ambiguous photo → photoVerified stays null or becomes false",
+        "Badge shown correctly in pin detail sheet for all three states",
+        "When answer=NO: trustScore decremented by 40 in Firestore document"
+      ],
+      "evidence": "",
+      "notes": "Depends on photo-upload feature. Uses claude-sonnet-4-6. Fire-and-forget from onReportCreate — do not await in the main pipeline."
+    },
+    {
+      "id": "weather-check",
+      "priority": 22,
+      "area": "verification",
+      "title": "Open-Meteo weather plausibility flag",
+      "user_visible_behavior": "Reports submitted during dry weather (rainfall < 1mm) have their trustScore reduced by 15. The report's weatherRainfallMm field is populated. UI shows a weather flag if rainfall was low.",
+      "status": "not_started",
+      "verification": [
+        "Submit a report; check Firestore — weatherRainfallMm field populated",
+        "Simulate a dry-weather submission (mock Open-Meteo to return 0mm) → trustScore = 60 - 15 = 45",
+        "Simulate a rainy submission (mock 5mm) → trustScore stays at 60",
+        "UI pin or detail shows weather flag icon when weatherRainfallMm < 1"
+      ],
+      "evidence": "",
+      "notes": "Open-Meteo is free, no API key. Endpoint: https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lng}&hourly=precipitation. Runs in parallel with GPS and lastReport lookups."
+    },
+    {
+      "id": "geojson-overlay",
+      "priority": 23,
+      "area": "map",
+      "title": "Historical flood zone GeoJSON overlay",
+      "user_visible_behavior": "Map shows a semi-transparent polygon overlay of historically flood-prone zones, loaded from a static GeoJSON file bundled with the app.",
+      "status": "not_started",
+      "verification": [
+        "GeoJSON file present in mobile/assets/",
+        "Map shows overlay polygons on load",
+        "Overlay is semi-transparent and does not obscure flood pins",
+        "Works offline (static file, no network request)"
+      ],
+      "evidence": "",
+      "notes": "Static file — no backend needed. Use Mapbox or Google Maps GeoJSON layer API."
+    },
+    {
+      "id": "dashboard",
+      "priority": 24,
+      "area": "dashboard",
+      "title": "City authority web dashboard",
+      "user_visible_behavior": "Authority user opens dashboard web app, sees a heatmap of active reports, a sortable table of all reports, and a ClusterAlert banner when >= 5 confirmed reports appear in a 1km radius.",
+      "status": "not_started",
+      "verification": [
+        "Dashboard loads at localhost:5173 (Vite dev server)",
+        "Heatmap shows active report locations from Firestore",
+        "ReportTable is sortable by depth, time, trustScore",
+        "Submit 5+ reports in a small area → ClusterAlert banner appears",
+        "Only users with role='authority' can see the dashboard (auth check at app level)"
+      ],
+      "evidence": "",
+      "notes": "Separate Vite React app in dashboard/. Reads Firestore directly. Authority auth check required at app load."
+    },
+    {
+      "id": "driver-mode",
+      "priority": 25,
+      "area": "reporting",
+      "title": "Driver mode one-tap report button",
+      "user_visible_behavior": "Users with role='driver' see a persistent large Report button always visible on the map screen. One tap auto-fills location, skips photo, and submits with large depth buttons optimised for stationary tapping.",
+      "status": "not_started",
+      "verification": [
+        "Log in as a driver account (role='driver')",
+        "Map screen shows persistent Report button (not hidden behind tab)",
+        "Tapping → depth picker appears with large tap targets",
+        "Submit completes in one tap flow without photo step",
+        "Resulting Firestore document identical to resident report"
+      ],
+      "evidence": "",
+      "notes": "Driver mode is the core Grab differentiator for the pitch. Prioritise for demo even if listed at priority 25."
+    }
+  ]
+}
