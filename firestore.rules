@@ -1,0 +1,29 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /reports/{reportId} {
+      allow read: if true;
+
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.depth in ['ankle','knee','waist','chest'];
+
+      allow update: if request.auth != null
+        && (
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['upvotes', 'downvotes'])
+          || resource.data.userId == request.auth.uid
+        );
+
+      allow delete: if false;
+    }
+
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+
+      allow read: if request.auth != null
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'authority';
+    }
+  }
+}
