@@ -24,13 +24,6 @@
         { "fieldPath": "userId",    "order": "ASCENDING" },
         { "fieldPath": "reportedAt","order": "DESCENDING" }
       ]
-    },
-    {
-      "collectionGroup": "users",
-      "queryScope": "COLLECTION",
-      "fields": [
-        { "fieldPath": "homeGeohash", "order": "ASCENDING" }
-      ]
     }
   ],
   "fieldOverrides": []
