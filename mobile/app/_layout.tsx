@@ -35,32 +35,40 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
-  const { user, loading } = useAuth();
-  // Cast to string[] — expo-router typed segments won't include 'auth' until
-  // the dev server regenerates .expo/types/router.d.ts after auth.tsx is added.
+  const { user, loading, needsHomeSetup } = useAuth();
+  // Cast to string[] — expo-router typed segments won't include new routes until
+  // the dev server regenerates .expo/types/router.d.ts after screens are added.
   const segments = useSegments() as string[];
   const router = useRouter();
 
   useEffect(() => {
     if (loading) return;
 
-    const inAuthScreen = segments[0] === 'auth';
+    const inAuthScreen  = segments[0] === 'auth';
+    const inHomeSetup   = segments[0] === 'home-setup';
 
     if (!user && !inAuthScreen) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       router.replace('/auth' as any);
     } else if (user && inAuthScreen) {
-      router.replace('/(tabs)');
+      // After sign-in: go to home-setup if needed, otherwise tabs
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (needsHomeSetup) router.replace('/home-setup' as any);
+      else router.replace('/(tabs)');
+    } else if (user && !inHomeSetup && needsHomeSetup) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      router.replace('/home-setup' as any);
     }
-  }, [user, loading, segments, router]);
+  }, [user, loading, segments, router, needsHomeSetup]);
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="auth"   options={{ headerShown: false }} />
-        <Stack.Screen name="modal"  options={{ presentation: 'modal' }} />
-        <Stack.Screen name="alert"  options={{ presentation: 'modal', title: 'Flood Alert' }} />
+        <Stack.Screen name="(tabs)"      options={{ headerShown: false }} />
+        <Stack.Screen name="auth"        options={{ headerShown: false }} />
+        <Stack.Screen name="home-setup"  options={{ headerShown: false }} />
+        <Stack.Screen name="modal"       options={{ presentation: 'modal' }} />
+        <Stack.Screen name="alert"       options={{ presentation: 'modal', title: 'Flood Alert' }} />
       </Stack>
     </ThemeProvider>
   );

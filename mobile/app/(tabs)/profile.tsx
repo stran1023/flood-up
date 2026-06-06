@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
 import { signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../../lib/firebase';
@@ -7,6 +8,7 @@ import type { AppUser } from '../../types';
 
 export default function ProfileScreen() {
   const user = auth.currentUser;
+  const router = useRouter();
   const [profile, setProfile] = useState<AppUser | null>(null);
 
   useEffect(() => {
@@ -24,6 +26,10 @@ export default function ProfileScreen() {
     }
   }
 
+  const homeLabel = profile?.homeGeohash
+    ? `${profile.homeLat?.toFixed(4)}, ${profile.homeLng?.toFixed(4)}`
+    : 'Not set';
+
   return (
     <View style={styles.container}>
       <View style={styles.card}>
@@ -33,8 +39,20 @@ export default function ProfileScreen() {
 
       <View style={styles.stats}>
         <StatRow label="Reports submitted" value={profile?.reportCount ?? 0} />
-        <StatRow label="Trust score" value={profile?.trustScore ?? 0} />
+        <StatRow label="Trust score"       value={profile?.trustScore ?? 0} />
       </View>
+
+      <TouchableOpacity
+        style={styles.locationRow}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        onPress={() => router.push({ pathname: '/home-setup', params: { edit: '1' } } as any)}
+      >
+        <View style={styles.locationLeft}>
+          <Text style={styles.locationLabel}>Home location</Text>
+          <Text style={styles.locationValue}>{homeLabel}</Text>
+        </View>
+        <Text style={styles.chevron}>›</Text>
+      </TouchableOpacity>
 
       <TouchableOpacity style={styles.signOut} onPress={handleSignOut}>
         <Text style={styles.signOutText}>Sign out</Text>
@@ -61,7 +79,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   email: { fontSize: 16, fontWeight: '600', color: '#1a1a1a' },
-  role: { fontSize: 13, color: '#888', textTransform: 'capitalize' },
+  role:  { fontSize: 13, color: '#888', textTransform: 'capitalize' },
   stats: {
     backgroundColor: '#fff',
     borderRadius: 12,
@@ -78,6 +96,19 @@ const styles = StyleSheet.create({
   },
   statLabel: { fontSize: 14, color: '#555' },
   statValue: { fontSize: 14, fontWeight: '700', color: '#1a1a1a' },
+  locationRow: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  locationLeft: { gap: 2 },
+  locationLabel: { fontSize: 14, color: '#555' },
+  locationValue: { fontSize: 13, color: '#888' },
+  chevron: { fontSize: 20, color: '#ccc', marginLeft: 8 },
   signOut: {
     marginTop: 8,
     padding: 16,

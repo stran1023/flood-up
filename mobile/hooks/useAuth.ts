@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { onAuthStateChanged, type User } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 
 async function ensureUserDoc(user: User): Promise<void> {
@@ -21,15 +21,40 @@ async function ensureUserDoc(user: User): Promise<void> {
 export function useAuth() {
   // undefined = still loading; null = signed out; User = signed in
   const [user, setUser] = useState<User | null | undefined>(undefined);
+  const [needsHomeSetup, setNeedsHomeSetup] = useState(false);
+  const [profileLoaded, setProfileLoaded] = useState(false);
 
   useEffect(() => {
-    return onAuthStateChanged(auth, async firebaseUser => {
+    let unsubDoc: (() => void) | null = null;
+
+    const unsubAuth = onAuthStateChanged(auth, async firebaseUser => {
+      if (unsubDoc) { unsubDoc(); unsubDoc = null; }
+
+      setProfileLoaded(false);
+      setUser(firebaseUser);
+
       if (firebaseUser) {
         await ensureUserDoc(firebaseUser);
+        let firstSnap = true;
+        unsubDoc = onSnapshot(doc(db, 'users', firebaseUser.uid), snap => {
+          setNeedsHomeSetup(!snap.data()?.homeGeohash);
+          if (firstSnap) {
+            firstSnap = false;
+            setProfileLoaded(true);
+          }
+        });
+      } else {
+        setNeedsHomeSetup(false);
+        setProfileLoaded(true);
       }
-      setUser(firebaseUser);
     });
+
+    return () => {
+      unsubAuth();
+      if (unsubDoc) unsubDoc();
+    };
   }, []);
 
-  return { user, loading: user === undefined };
+  // loading = true until auth resolves AND first profile snapshot arrives
+  return { user, loading: user === undefined || !profileLoaded, needsHomeSetup };
 }

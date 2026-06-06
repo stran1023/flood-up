@@ -37,14 +37,14 @@
       "area": "auth",
       "title": "User home location setup",
       "user_visible_behavior": "On first login, user is prompted to set home location (auto-filled from GPS, editable on map). `homeGeohash` is written to the Firestore user document. Without this, FCM alerts cannot be targeted.",
-      "status": "not_started",
+      "status": "in_progress",
       "verification": [
         "First login → home location prompt appears",
         "Tap 'Use my location' → GPS coordinate auto-fills",
         "Confirm → Firestore user document has `homeLat`, `homeLng`, `homeGeohash` set",
         "Navigate to Profile and edit home location → Firestore updates"
       ],
-      "evidence": "",
+      "evidence": "useAuth.ts: onSnapshot listener on users doc; exposes needsHomeSetup=!homeGeohash. _layout.tsx: redirects to /home-setup when needsHomeSetup is true (waits for profile load before redirecting). home-setup.tsx: Location.getCurrentPositionAsync + geohashForLocation precision 7 + updateDoc. profile.tsx: shows coords and Edit button navigating to /home-setup?edit=1. TypeScript: 0 errors. Requires live device test to move to passing.",
       "notes": "Critical path for push notifications. homeGeohash must be set or users never receive alerts."
     },
     {

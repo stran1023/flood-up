@@ -142,3 +142,28 @@
 - Live end-to-end test: enter destination → route drawn → flood warning fires
 
 **Next best action:** Implement `home-location` feature (priority 3) — still the highest-priority unfinished feature.
+
+---
+
+### Session 5 — 2026-06-06 (continued)
+
+**Goal:** Implement `home-location` feature (priority 3).
+
+**Completed:**
+
+- `mobile/hooks/useAuth.ts` — replaced one-time `getDoc` with `onSnapshot` listener on the user doc; exposes `needsHomeSetup: !homeGeohash` and `profileLoaded` flag so `_layout.tsx` waits for the first profile snapshot before evaluating any redirects (prevents flash-redirect before homeGeohash state is known)
+- `mobile/app/home-setup.tsx` — new screen with "Use my location" button (`expo-location`, `Accuracy.Balanced`), shows selected coords, "Save home location" writes `homeLat`, `homeLng`, `homeGeohash` (precision 7 via `geohashForLocation` from `geofire-common`) to Firestore via `updateDoc`; accepts `?edit=1` param to show Cancel button when opened from Profile
+- `mobile/app/_layout.tsx` — added `needsHomeSetup` to auth guard effect; redirects authenticated users to `/home-setup` when `homeGeohash` is missing; on post-login redirect from `/auth`, goes to `/home-setup` first if needed; registered `home-setup` as a Stack screen with `headerShown: false`
+- `mobile/app/(tabs)/profile.tsx` — added "Home location" tappable row showing current coords (or "Not set"); tapping navigates to `/home-setup?edit=1`
+
+**Verification run:** `npx tsc --noEmit` in `mobile/` → 0 TypeScript errors.
+
+**Feature status:** `home-location` → `in_progress` (pending live device test).
+
+**What is NOT done (requires live device):**
+- Run on a real device or simulator with location services enabled
+- Confirm first-login redirect fires and `homeGeohash` appears in Firestore
+- Confirm Profile edit flow updates Firestore
+- Only after those steps can status move to `passing`
+
+**Next best action:** Implement `report-submit` feature (priority 4), or run the live device verification for `home-location` to move it to `passing`.
