@@ -224,7 +224,7 @@
       "area": "verification",
       "title": "Claude Vision image verification badge",
       "user_visible_behavior": "Reports with photos show a verification badge: green checkmark (YES), red X (NO), or grey question mark (UNCERTAIN/null). Badge updates asynchronously after Claude Vision responds.",
-      "status": "not_started",
+      "status": "in_progress",
       "verification": [
         "Submit a report with a clear flood photo → photoVerified becomes true within ~10s",
         "Submit a report with a non-flood photo (e.g. clear road) → photoVerified becomes false",
@@ -232,8 +232,8 @@
         "Badge shown correctly in pin detail sheet for all three states",
         "When answer=NO: trustScore decremented by 40 in Firestore document"
       ],
-      "evidence": "",
-      "notes": "Depends on photo-upload feature. Uses claude-sonnet-4-6. Fire-and-forget from onReportCreate — do not await in the main pipeline."
+      "evidence": "verifyImage.ts (Cloud Function): already complete — calls claude-sonnet-4-6 with photoUrl as image source (url type), parses YES/NO/UNCERTAIN, writes photoVerified:true|false|null, decrements trustScore by 40 on NO. Called fire-and-forget from onReportCreate. alert.tsx: VerificationBadge component renders overlaid pill on photo (position:absolute top-right). Four states: undefined→'⏳ Checking photo…'(grey), null→'? Uncertain'(grey), true→'✓ Flood confirmed'(green #4CAF50), false→'✗ Not a flood'(red #E24B4A). onSnapshot in alert.tsx delivers the update live when CF writes photoVerified — no polling needed. TypeScript: 0 errors. Requires ANTHROPIC_API_KEY in functions/.env + firebase deploy --only functions.",
+      "notes": "ANTHROPIC_API_KEY must be set in functions/.env (or via Firebase secret manager) before deploying. The badge undefined→null→true/false transition is visible in real time because alert.tsx uses onSnapshot."
     },
     {
       "id": "weather-check",

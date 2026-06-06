@@ -432,3 +432,29 @@ Three files changed:
 **Feature status:** `photo-upload` → `in_progress` (pending `firebase deploy --only storage` + live device test).
 
 **Next best action:** Implement `claude-vision` feature (priority 21) — `verifyImage.ts` is already scaffolded in `functions/src/verifyImage.ts` and called from `onReportCreate`; need to add the verification badge to the alert screen.
+
+---
+
+### Session 16 — 2026-06-06 (continued)
+
+**Goal:** Implement `claude-vision` feature (priority 21).
+
+**Findings — Cloud Function complete; only badge UI missing.**
+
+`verifyImage.ts` was already fully correct: calls `claude-sonnet-4-6` with the `photoUrl` as an `image` source block, parses YES/NO/UNCERTAIN, writes `photoVerified: true|false|null`, and on NO decrements `trustScore` by 40 via `FieldValue.increment(-40)`. Called fire-and-forget from `onReportCreate`. `onSnapshot` in `alert.tsx` was already wiring up real-time delivery of the update when the CF writes.
+
+**One file changed — `alert.tsx`:**
+- Added `VerificationBadge` component: `position:absolute` pill overlaid top-right on the photo.
+- Four states: `undefined` (field absent, CF running) → "⏳ Checking photo…" grey; `null` (UNCERTAIN or error) → "? Uncertain" grey; `true` → "✓ Flood confirmed" green; `false` → "✗ Not a flood" red.
+- Wrapped the existing `<Image>` in a `<View style={styles.photoContainer}>` so the badge has a `position:'relative'` parent.
+
+**Live update path:** submit with photo → `onReportCreate` calls `verifyImage` fire-and-forget → Claude responds ~5-10s → CF writes `photoVerified` → `onSnapshot` fires → badge changes from ⏳ to ✓/✗/? in real time, no user action required.
+
+**Verification run:** `npx tsc --noEmit` in `mobile/` → 0 errors.
+
+**Feature status:** `claude-vision` → `in_progress` (pending `ANTHROPIC_API_KEY` in `functions/.env` + `firebase deploy --only functions` + live photo test).
+
+**Deploy checklist for live test:**
+1. `functions/.env`: `ANTHROPIC_API_KEY=sk-ant-...`
+2. `firebase deploy --only functions,storage`
+3. Submit report with clear flood photo → watch `photoVerified` field appear in Firestore console
