@@ -10,7 +10,7 @@ export function useReports() {
   useEffect(() => {
     const q = query(
       collection(db, 'reports'),
-      where('status', 'in', ['pending', 'confirmed']),
+      where('status', 'in', ['pending', 'confirmed', 'disputed']),
       where('expiresAt', '>', Timestamp.now())
     );
 

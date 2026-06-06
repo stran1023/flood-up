@@ -358,3 +358,25 @@ Everything was already correct except the data subscription:
 **Feature status:** `upvote-downvote` → `in_progress` (pending live 2-device test).
 
 **Next best action:** Implement `disputed-status` feature (priority 12) — `onReportUpdate` trigger in `notifyNearby.ts` already has the dispute logic; verify thresholds and add disputed visual state to `FloodPin.tsx`.
+
+---
+
+### Session 13 — 2026-06-06 (continued)
+
+**Goal:** Implement `disputed-status` feature (priority 12).
+
+**Three fixes applied:**
+
+1. **Infinite loop in clearing branch** — when `onReportUpdate` wrote `status='pending'` to clear a dispute, it triggered itself again: the new event had `before.status='disputed'` (the Firestore before-snapshot always reflects the pre-write state) and `after.status='pending'`, causing the clearing branch to run again endlessly. Fixed by adding `after.status === 'disputed'` guard — the branch now only fires when a vote changes while the doc is still disputed, not when the CF itself changes the status.
+
+2. **Wrong status on dispute clearance** — was always writing `status='pending'` regardless of whether the report had been previously confirmed. Fixed: restores `'confirmed'` if `corroborationCount >= 3`, else `'pending'`.
+
+3. **Disputed pins invisible** — `useReports` filtered `status in ['pending','confirmed']`, so disputed reports vanished from the map when disputed. Added `'disputed'` to the filter. `FloodPin.tsx` renders disputed pins as grey fill (`#9E9E9E`) + orange border (`#FF9800`) — distinct from pending (depth color, 65% opacity) and confirmed (depth color, full opacity).
+
+**Discrepancy in original spec noted:** Verification step "upvotes=0, downvotes=3 → disputed" is wrong — 3 is not > 0+5=5 with the stated threshold. Correct test is upvotes=0, downvotes=6 (or upvotes=10, downvotes=20 as in step 3).
+
+**Verification run:** `npx tsc --noEmit` in `functions/` → 0 errors. `npx tsc --noEmit` in `mobile/` → 0 errors.
+
+**Feature status:** `disputed-status` → `in_progress` (pending live deploy + Firestore console test).
+
+**Next best action:** All core features (priorities 1–12) are now implemented. Remaining unstarted features are priorities 20–25 (photo upload, Claude Vision, weather check UI, GeoJSON overlay, driver mode). Recommend running `./init.sh` to confirm clean baseline, then planning which demo-critical features to tackle next.

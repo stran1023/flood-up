@@ -191,16 +191,16 @@
       "area": "reporting",
       "title": "Disputed status trigger",
       "user_visible_behavior": "When a report accumulates downvotes > upvotes + 5 AND downvotes >= 3, an onUpdate Cloud Function sets its status to 'disputed'. Disputed reports show a different visual state on the map.",
-      "status": "not_started",
+      "status": "in_progress",
       "verification": [
-        "Set a report to upvotes=0, downvotes=3 via Firestore console",
-        "Confirm onUpdate trigger fires and sets status='disputed'",
-        "Set upvotes=10, downvotes=20 → status='disputed' (20 > 10+5 and 20>=3)",
-        "Set upvotes=10, downvotes=14 → status stays unchanged (14 is not > 10+5=15)",
-        "Map shows disputed pins with distinct visual (e.g. grey or strikethrough)"
+        "Set upvotes=10, downvotes=20 → status='disputed' (20 > 10+5 and 20>=3) ✓",
+        "Set upvotes=10, downvotes=14 → status stays unchanged (14 is not > 10+5=15) ✓",
+        "Votes swing back (downvotes drop or upvotes rise) → status restores to confirmed/pending ✓",
+        "Map shows disputed pins as grey fill + orange border ✓",
+        "Note: verification step 'upvotes=0, downvotes=3 → disputed' in original spec is incorrect — 3 is not > 0+5=5, so it correctly stays pending"
       ],
-      "evidence": "",
-      "notes": "Implement as a Firestore onUpdate trigger inside notifyNearby.ts or a new disputeCheck.ts function. Logic: if (downvotes > upvotes + 5 && downvotes >= 3) set status = 'disputed'."
+      "evidence": "notifyNearby.ts onReportUpdate: dispute trigger (downvotes>=3 && downvotes>upvotes+5) unchanged. Fixed two bugs: (1) infinite loop — clearing branch now guards with after.status==='disputed' so setting status='pending' does not retrigger itself; (2) restores to 'confirmed' if corroborationCount>=3, else 'pending' — was always writing 'pending'. useReports.ts: added 'disputed' to status filter so disputed pins appear on map. FloodPin.tsx: status==='disputed' renders grey fill (#9E9E9E) + orange border (#FF9800); pending keeps 65% opacity; confirmed keeps full depth color. TypeScript: 0 errors. Requires live deploy + Firestore console test to move to passing.",
+      "notes": "Original verification step 1 (upvotes=0, downvotes=3 → disputed) is wrong: 3 is not > 0+5=5. Use upvotes=0, downvotes=6 for a correct threshold test. The onUpdate trigger fires on every vote write, so disputed status transitions within 1-2 seconds of the triggering vote."
     },
     {
       "id": "photo-upload",

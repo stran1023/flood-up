@@ -10,7 +10,7 @@ interface Props {
 
 export function FloodPin({ report, onPress }: Props) {
   const config = DEPTH_CONFIG[report.depth];
-  const isConfirmed = report.status === 'confirmed';
+  const { status } = report;
 
   return (
     <Marker
@@ -21,8 +21,8 @@ export function FloodPin({ report, onPress }: Props) {
     >
       <View style={[
         styles.pin,
-        { backgroundColor: config.color },
-        !isConfirmed && styles.pinPending,
+        status === 'disputed' ? styles.pinDisputed : { backgroundColor: config.color },
+        status === 'pending' && styles.pinPending,
       ]} />
     </Marker>
   );
@@ -42,5 +42,10 @@ const styles = StyleSheet.create({
   },
   pinPending: {
     opacity: 0.65,
+  },
+  // Grey fill + orange border signals "community disputes this report"
+  pinDisputed: {
+    backgroundColor: '#9E9E9E',
+    borderColor: '#FF9800',
   },
 });

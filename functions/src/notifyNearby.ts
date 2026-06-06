@@ -96,12 +96,17 @@ export const onReportUpdate = onDocumentUpdated(
       return;
     }
 
-    // Clear disputed status if votes swing back
+    // Clear disputed status if votes swing back.
+    // Guard: only run when the doc is still 'disputed' — prevents an infinite loop
+    // where setting status='pending' retriggers this handler with before='disputed'.
     if (
       before.status === 'disputed' &&
+      after.status === 'disputed' &&
       !(after.downvotes >= 3 && after.downvotes > after.upvotes + 5)
     ) {
-      await db.collection('reports').doc(reportId).update({ status: 'pending' });
+      // Restore to confirmed if the cluster already met the corroboration threshold.
+      const restoredStatus = after.corroborationCount >= 3 ? 'confirmed' : 'pending';
+      await db.collection('reports').doc(reportId).update({ status: restoredStatus });
     }
   }
 );
