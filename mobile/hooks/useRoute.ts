@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { decodePolyline, findFloodsOnRoute, type LatLng } from '../lib/routeUtils';
 import { useLocation } from './useLocation';
 import type { FloodReport } from '../types';
@@ -17,6 +17,15 @@ export function useRoute(reports: FloodReport[]) {
   const [route, setRoute] = useState<RouteResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Keep flood warnings current as live reports appear or expire.
+  useEffect(() => {
+    setRoute(current =>
+      current
+        ? { ...current, floodsOnRoute: findFloodsOnRoute(current.polylinePoints, reports) }
+        : null
+    );
+  }, [reports]);
 
   async function fetchRoute(destination: string) {
     if (!location) {

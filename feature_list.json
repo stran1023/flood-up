@@ -88,17 +88,18 @@
       "area": "map",
       "title": "Flood-aware route overlay (Option A)",
       "user_visible_behavior": "User types a destination in the search bar that floats above the map. A blue polyline route is drawn on the map. Each flood report within 200m of the route is ringed with a colored warning circle. A banner shows '3 flood zones on your route · 18 mins (5.2 km)' or 'Route looks clear · 12 mins (3.1 km)'. Tapping × clears the route.",
-      "status": "not_started",
+      "status": "in_progress",
       "verification": [
         "Type a destination and press Search → blue route polyline appears on map",
         "Flood report within 200m of route → colored warning circle appears + banner shows flood count",
         "Flood report > 200m from route → no warning circle, banner shows 'Route looks clear'",
         "Tap × → route and circles clear from map",
         "Missing EXPO_PUBLIC_GOOGLE_DIRECTIONS_API_KEY → error banner shown",
+        "New report appears while route active → warning circles update without re-searching",
         "TypeScript: 0 errors in mobile/"
       ],
-      "evidence": "",
-      "notes": "Requires EXPO_PUBLIC_GOOGLE_DIRECTIONS_API_KEY in mobile/.env (Google Maps Directions API). No new npm packages — polyline decoding is implemented inline in mobile/lib/routeUtils.ts. Flood proximity threshold: 200m from any route segment."
+      "evidence": "routeUtils.ts: decodePolyline() (inline Google encoded-polyline decoder, no package); findFloodsOnRoute() (point-to-segment haversine distance via geofire-common, 200m threshold). useRoute.ts: fetches Google Maps Directions API, decodes overview_polyline, calls findFloodsOnRoute; useEffect on reports re-runs findFloodsOnRoute when live reports change while route is active (was stale before this fix). RouteSearch.tsx: floating search bar (position:absolute top); blue/green/red banners; × clear button. RouteOverlay.tsx: blue Polyline (strokeWidth 4) + depth-colored Circle (radius 200m, 25% opacity fill) per flood on route; rendered inside FloodMap MapView. index.tsx: useRoute(reports) wired; RouteSearch and FloodMap both receive route. EXPO_PUBLIC_GOOGLE_DIRECTIONS_API_KEY missing → error banner shown immediately. TypeScript: 0 errors. Requires API key in mobile/.env + live device test.",
+      "notes": "Add EXPO_PUBLIC_GOOGLE_DIRECTIONS_API_KEY=<key> to mobile/.env. Key needs Google Maps Directions API enabled in GCP console. Polyline decoding is inline (no extra package). Flood proximity threshold: 200m from any route segment using point-to-segment projection."
     },
     {
       "id": "corroboration",

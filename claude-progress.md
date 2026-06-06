@@ -478,3 +478,26 @@ Three files changed:
 **Verification run:** `npx tsc --noEmit` in `mobile/` → 0 errors.
 
 **Feature status:** `weather-check` → `in_progress` (pending live device test + CF deploy).
+
+---
+
+### Session 18 — 2026-06-06 (continued)
+
+**Goal:** Implement `flood-route-overlay` feature (priority 6).
+
+**Findings — fully scaffolded; one staleness bug fixed.**
+
+All four files were already complete and wired into `index.tsx`:
+- `routeUtils.ts`: `decodePolyline()` (inline Google encoded-polyline decoder), `findFloodsOnRoute()` (point-to-segment haversine, 200m threshold)
+- `useRoute.ts`: Directions API fetch, polyline decode, flood-on-route detection
+- `RouteOverlay.tsx`: blue `Polyline` + depth-colored `Circle` (radius 200m, 25% fill) per flood
+- `RouteSearch.tsx`: floating search bar + green/red/error banners + × clear
+- `index.tsx`: `useRoute(reports)` called; `RouteSearch` and `FloodMap` both receive `route`
+
+**One bug fixed in `useRoute.ts`:** `floodsOnRoute` was computed only when `fetchRoute` was called. If a new report appeared or expired while a route was active, the warning circles staled until the user re-searched. Added a `useEffect` on `reports` that re-runs `findFloodsOnRoute(current.polylinePoints, reports)` in-place when the live report set changes — no API re-call needed.
+
+**Verification run:** `npx tsc --noEmit` in `mobile/` → 0 errors.
+
+**Feature status:** `flood-route-overlay` → `in_progress` (pending `EXPO_PUBLIC_GOOGLE_DIRECTIONS_API_KEY` in `mobile/.env` + live device test).
+
+**Demo setup:** Add `EXPO_PUBLIC_GOOGLE_DIRECTIONS_API_KEY=<key>` to `mobile/.env`. Enable "Directions API" in GCP console for the key. If key is absent, the error banner fires immediately on search.
