@@ -1,7 +1,9 @@
 import { StyleSheet } from 'react-native';
 import MapView from 'react-native-maps';
 import { FloodPin } from './FloodPin';
+import { RouteOverlay } from './RouteOverlay';
 import type { FloodReport } from '../types';
+import type { RouteResult } from '../hooks/useRoute';
 
 // Ho Chi Minh City city center — default region for SE Asia target market
 const HCMC_REGION = {
@@ -13,10 +15,11 @@ const HCMC_REGION = {
 
 interface Props {
   reports: FloodReport[];
+  route?: RouteResult | null;
   onPinPress?: (report: FloodReport) => void;
 }
 
-export function FloodMap({ reports, onPinPress }: Props) {
+export function FloodMap({ reports, route, onPinPress }: Props) {
   return (
     <MapView
       style={styles.map}
@@ -27,6 +30,7 @@ export function FloodMap({ reports, onPinPress }: Props) {
       {reports.map(report => (
         <FloodPin key={report.id} report={report} onPress={onPinPress} />
       ))}
+      {route && <RouteOverlay route={route} />}
     </MapView>
   );
 }

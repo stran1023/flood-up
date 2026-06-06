@@ -83,8 +83,26 @@
       "notes": "useReports hook must filter by status in ['pending','confirmed'] and expiresAt > now()."
     },
     {
-      "id": "corroboration",
+      "id": "flood-route-overlay",
       "priority": 6,
+      "area": "map",
+      "title": "Flood-aware route overlay (Option A)",
+      "user_visible_behavior": "User types a destination in the search bar that floats above the map. A blue polyline route is drawn on the map. Each flood report within 200m of the route is ringed with a colored warning circle. A banner shows '3 flood zones on your route · 18 mins (5.2 km)' or 'Route looks clear · 12 mins (3.1 km)'. Tapping × clears the route.",
+      "status": "not_started",
+      "verification": [
+        "Type a destination and press Search → blue route polyline appears on map",
+        "Flood report within 200m of route → colored warning circle appears + banner shows flood count",
+        "Flood report > 200m from route → no warning circle, banner shows 'Route looks clear'",
+        "Tap × → route and circles clear from map",
+        "Missing EXPO_PUBLIC_GOOGLE_DIRECTIONS_API_KEY → error banner shown",
+        "TypeScript: 0 errors in mobile/"
+      ],
+      "evidence": "",
+      "notes": "Requires EXPO_PUBLIC_GOOGLE_DIRECTIONS_API_KEY in mobile/.env (Google Maps Directions API). No new npm packages — polyline decoding is implemented inline in mobile/lib/routeUtils.ts. Flood proximity threshold: 200m from any route segment."
+    },
+    {
+      "id": "corroboration",
+      "priority": 7,
       "area": "reporting",
       "title": "Corroboration counter and confirmed status",
       "user_visible_behavior": "When 3 independent reports arrive within 500m and 30 minutes of each other, the earliest report's status changes to 'confirmed' and its pin changes appearance (e.g. solid fill vs outline). `corroborationCount` on each report reflects self-inclusive count.",
@@ -100,7 +118,7 @@
     },
     {
       "id": "severity-fastpath",
-      "priority": 7,
+      "priority": 8,
       "area": "notifications",
       "title": "Severity fast-path preliminary alert",
       "user_visible_behavior": "A single waist or chest depth report with trustScore >= 65 immediately triggers a push notification to nearby users, labelled 'Unverified report nearby'. This fires without waiting for 3 corroborations.",
@@ -116,7 +134,7 @@
     },
     {
       "id": "push-notifications",
-      "priority": 8,
+      "priority": 9,
       "area": "notifications",
       "title": "FCM push notifications on confirmed reports",
       "user_visible_behavior": "When a report reaches confirmed status, all users with homeGeohash within 2km receive an FCM push notification. Tapping the notification opens the map centered on the report.",
@@ -134,7 +152,7 @@
     },
     {
       "id": "auto-expiry",
-      "priority": 9,
+      "priority": 10,
       "area": "infrastructure",
       "title": "Report auto-expiry (6 hours)",
       "user_visible_behavior": "Reports older than 6 hours automatically disappear from the live map. The scheduled Cloud Function runs every 30 minutes and sets status='expired' on overdue reports.",
@@ -151,7 +169,7 @@
     },
     {
       "id": "upvote-downvote",
-      "priority": 10,
+      "priority": 11,
       "area": "reporting",
       "title": "Still flooded / Looks clear upvote and downvote",
       "user_visible_behavior": "Tapping a map pin shows upvote ('Still flooded') and downvote ('Looks clear') buttons. Tapping increments the corresponding counter on the Firestore document. Counts update in real time.",
@@ -168,7 +186,7 @@
     },
     {
       "id": "disputed-status",
-      "priority": 11,
+      "priority": 12,
       "area": "reporting",
       "title": "Disputed status trigger",
       "user_visible_behavior": "When a report accumulates downvotes > upvotes + 5 AND downvotes >= 3, an onUpdate Cloud Function sets its status to 'disputed'. Disputed reports show a different visual state on the map.",

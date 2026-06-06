@@ -116,3 +116,29 @@
 **Feature status moved to:** `auth` → `passing`.
 
 **Next best action:** Implement `home-location` feature (priority 3) — GPS prompt on first login, write `homeLat`, `homeLng`, `homeGeohash` to Firestore user document.
+
+---
+
+### Session 4 — 2026-06-06 (continued)
+
+**Goal:** Add flood-aware route overlay feature (Option A) to the mobile map screen.
+
+**Completed:**
+
+- `mobile/lib/routeUtils.ts` — inline Google encoded-polyline decoder; `findFloodsOnRoute` (point-to-segment haversine distance, 200m threshold)
+- `mobile/hooks/useRoute.ts` — fetches route from Google Maps Directions API (origin = current GPS); decodes overview polyline; finds active flood reports within 200m; returns `RouteResult`
+- `mobile/components/RouteOverlay.tsx` — renders blue `Polyline` + a depth-colored `Circle` (200m radius) for each flood on the route
+- `mobile/components/RouteSearch.tsx` — floating destination search bar; shows green "Route looks clear" or red "N flood zones on your route · ETA (distance)" banner; × clears route
+- `mobile/components/FloodMap.tsx` — added optional `route` prop; renders `RouteOverlay` when route is present
+- `mobile/app/(tabs)/index.tsx` — wired `useRoute(reports)` and `RouteSearch` into the map screen
+- `feature_list.json` — added `flood-route-overlay` at priority 6; renumbered downstream features 7–12
+
+**Verification:** `npx tsc --noEmit` in `mobile/` → 0 errors. No new npm packages.
+
+**Feature status:** `flood-route-overlay` → `not_started` (pending live device test with API key).
+
+**What is NOT done (requires live device + API key):**
+- `EXPO_PUBLIC_GOOGLE_DIRECTIONS_API_KEY` must be added to `mobile/.env`
+- Live end-to-end test: enter destination → route drawn → flood warning fires
+
+**Next best action:** Implement `home-location` feature (priority 3) — still the highest-priority unfinished feature.

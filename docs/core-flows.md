@@ -64,7 +64,32 @@ Reports expire 6 hours after `reportedAt`. `expiresAt` is written by the client 
 
 ---
 
-## 5. Disputed status (community moderation)
+## 5. Flood-aware route check (driver / resident)
+
+```
+User types a destination in the RouteSearch bar on the map screen
+  → useRoute hook calls Google Maps Directions API
+      origin = current GPS coordinates
+      destination = typed address string (geocoded by the API)
+  → API returns overview_polyline (encoded string, ~100 points)
+  → decodePolyline() decodes the string to LatLng[]
+  → findFloodsOnRoute() checks each active report against every route segment
+      threshold: 200m (haversine point-to-segment distance)
+  → RouteOverlay renders on the map:
+      blue Polyline for the full route
+      depth-colored Circle (200m radius) for each flood on the route
+  → RouteSearch banner shows:
+      red: "N flood zones on your route · ETA (distance)"
+      green: "Route looks clear · ETA (distance)"
+  → tapping × clears route from map
+```
+
+Requires `EXPO_PUBLIC_GOOGLE_DIRECTIONS_API_KEY` in `mobile/.env`.
+No rerouting is performed — the overlay is informational only.
+
+---
+
+## 6. Disputed status (community moderation)
 
 ```
 Any authenticated user taps 'Looks clear' on a pin detail sheet

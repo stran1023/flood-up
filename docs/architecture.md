@@ -32,15 +32,19 @@ flood-up/
 │   │   ├── ReportSheet.tsx      # Bottom sheet report form
 │   │   ├── DepthPicker.tsx      # 4-option depth selector
 │   │   ├── FloodPin.tsx         # Custom map marker
-│   │   └── ConfirmToast.tsx     # Post-submit confirmation
+│   │   ├── ConfirmToast.tsx     # Post-submit confirmation
+│   │   ├── RouteOverlay.tsx     # Route polyline + flood warning circles
+│   │   └── RouteSearch.tsx      # Destination search bar + flood banner
 │   ├── hooks/
 │   │   ├── useReports.ts        # Firestore real-time listener
 │   │   ├── useLocation.ts       # GPS location hook
-│   │   └── useNotifications.ts  # FCM token registration + refresh
+│   │   ├── useNotifications.ts  # FCM token registration + refresh
+│   │   └── useRoute.ts          # Directions API fetch + flood proximity check
 │   ├── lib/
 │   │   ├── firebase.ts          # Firebase init
 │   │   ├── geo.ts               # Geohash helpers
-│   │   └── api.ts               # Cloud Function callers
+│   │   ├── api.ts               # Cloud Function callers
+│   │   └── routeUtils.ts        # Polyline decoder + findFloodsOnRoute
 │   └── constants/
 │       └── depth.ts             # Depth enum + colors
 │
