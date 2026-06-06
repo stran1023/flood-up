@@ -307,3 +307,30 @@ The Expo Push API delivery path already existed from the severity-fastpath sessi
 - 2-device test: submit 3 reports → confirmed notification arrives on second device → tap centers map on report
 
 **Next best action:** Implement `auto-expiry` feature (priority 10) — `expireReports` scheduled Cloud Function is already scaffolded in `functions/src/expireReports.ts`; verify the 30-min schedule, expiry query, and client-side map behavior.
+
+---
+
+### Session 11 — 2026-06-06 (continued)
+
+**Goal:** Implement `auto-expiry` feature (priority 10).
+
+**Findings — mostly scaffolded correctly; two fixes applied:**
+
+The existing `expireReports.ts` was functionally correct but had two inefficiencies:
+
+1. **Unbounded query** — original query was `expiresAt < now` with no status filter, so it would scan every historically expired document in the collection. Fixed by adding `status in ['pending', 'confirmed', 'disputed']` to scope the query to active reports only. The existing composite index `{ status ASCENDING, expiresAt ASCENDING }` covers this query exactly.
+
+2. **No batch size guard** — Firestore batch writes cap at 500 documents. A single `batch.commit()` over more than 500 reports would throw. Fixed by chunking in `BATCH_LIMIT = 500` slices.
+
+**Client-side behavior verified (no changes needed):**
+- `useReports.ts` queries `status in ['pending', 'confirmed'] + expiresAt > Timestamp.now()`
+- When `expireReports` sets `status = 'expired'`, Firestore's `onSnapshot` detects the document change; the doc no longer matches the query, so it's removed from the result set, and the pin disappears from the map automatically. No polling, no extra client code.
+- The `expiresAt > now` client-side guard in `useReports.ts` handles mid-session expiry (the static `Timestamp.now()` in the server query doesn't update during the session).
+
+**Verification run:** `npx tsc --noEmit` in `functions/` → 0 errors.
+
+**Feature status:** `auto-expiry` → `in_progress` (pending `firebase deploy --only functions`).
+
+**Demo shortcut:** Firebase console → Functions → expireReports → Actions → "Trigger". No need to wait 30 min. Set `expiresAt` to 1 minute in the past via Firestore console first.
+
+**Next best action:** Implement `upvote-downvote` feature (priority 11) — upvote/downvote buttons exist in `alert.tsx` and write to Firestore; need to verify security rule allows only those two fields to be updated by non-owners, and add real-time count update to the alert screen.

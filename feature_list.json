@@ -157,7 +157,7 @@
       "area": "infrastructure",
       "title": "Report auto-expiry (6 hours)",
       "user_visible_behavior": "Reports older than 6 hours automatically disappear from the live map. The scheduled Cloud Function runs every 30 minutes and sets status='expired' on overdue reports.",
-      "status": "not_started",
+      "status": "in_progress",
       "verification": [
         "Deploy `expireReports` scheduled function (every 30 minutes)",
         "Manually set a report's expiresAt to 1 minute ago in Firestore",
@@ -165,8 +165,8 @@
         "Confirm report status = 'expired' in Firestore",
         "Confirm pin disappears from live map"
       ],
-      "evidence": "",
-      "notes": "For demo, manually trigger the function rather than waiting 30 minutes. The live map query must filter expiresAt > Timestamp.now()."
+      "evidence": "expireReports.ts: onSchedule 'every 30 minutes' asia-southeast1. Query scoped to status in ['pending','confirmed','disputed'] + expiresAt < now — uses existing composite index {status ASCENDING, expiresAt ASCENDING} so it never scans historical expired docs. Batch writes chunked at 500-doc BATCH_LIMIT to respect Firestore batch cap. useReports.ts: onSnapshot with status in ['pending','confirmed'] + client-side expiresAt>now guard; when expireReports updates status→'expired', the doc drops out of the live query automatically, removing the pin. TypeScript: 0 errors. expireReports exported from index.ts. Requires firebase deploy --only functions to verify.",
+      "notes": "For demo: manually trigger in Firebase console (Functions → expireReports → Actions → Trigger) rather than waiting 30 min. Pin disappears because useReports status filter already excludes 'expired'."
     },
     {
       "id": "upvote-downvote",
