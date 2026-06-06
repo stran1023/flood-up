@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { FloodMap } from '../../components/FloodMap';
 import { RouteSearch } from '../../components/RouteSearch';
 import { DriverReportOverlay } from '../../components/DriverReportOverlay';
+import { DepthLegend } from '../../components/DepthLegend';
 import { useReports } from '../../hooks/useReports';
 import { useRoute } from '../../hooks/useRoute';
 import { useAuth } from '../../hooks/useAuth';
@@ -37,6 +38,7 @@ export default function MapScreen() {
         onSearch={fetchRoute}
         onClear={clearRoute}
       />
+      <DepthLegend />
       {role === 'driver' && <DriverReportOverlay />}
     </View>
   );
