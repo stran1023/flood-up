@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Image } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { doc, onSnapshot, updateDoc, increment, type Timestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
@@ -58,6 +58,10 @@ export default function AlertScreen() {
         <Text style={styles.depthLabel}>{config.label}</Text>
       </View>
 
+      {report.photoUrl && (
+        <Image source={{ uri: report.photoUrl }} style={styles.photo} resizeMode="cover" />
+      )}
+
       <View style={styles.meta}>
         <MetaRow label="Reported"   value={timeAgo(report.reportedAt)} />
         <MetaRow label="Status"     value={report.status} />
@@ -114,4 +118,5 @@ const styles = StyleSheet.create({
   voteUp:   { backgroundColor: '#4CAF50' },
   voteDown: { backgroundColor: '#9E9E9E' },
   voteText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  photo: { width: '100%', height: 180, borderRadius: 12 },
 });

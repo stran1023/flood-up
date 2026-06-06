@@ -408,3 +408,27 @@ Three files changed:
 **Feature status:** `driver-mode` → `in_progress` (pending live device test with role='driver').
 
 **Demo setup:** In Firestore console, set `users/{uid} → role: 'driver'` for the demo driver account. The FAB appears immediately on next auth state snapshot.
+
+---
+
+### Session 15 — 2026-06-06 (continued)
+
+**Goal:** Implement `photo-upload` feature (priority 20).
+
+**Completed (7 files):**
+
+- `expo-image-picker ~56.0.16` installed via `npx expo install` (SDK-compatible version).
+- `firebase.ts` — added `getStorage` import; exports `storage = getStorage(app)`.
+- `storage.rules` (new) — authenticated write only, max 10 MB, `contentType` must match `image/.*`; public read for map display.
+- `firebase.json` — added `"storage": { "rules": "storage.rules" }`.
+- `app.json` — added `expo-image-picker` plugin with camera and photo-library permission strings.
+- `ReportSheet.tsx` — `photo: string|null` state; `pickPhoto()` shows `Alert` with Camera/Photo Library/Cancel, requests permissions before each; when photo is set: 180px thumbnail + "✕ Remove photo" link; on submit: `fetch(photo)→r.blob()→uploadBytes(storageRef, blob)→getDownloadURL()` before `addDoc`, spreads `photoUrl` into doc only when defined; submit button label changes to "Submit with photo"; clears photo on success.
+- `alert.tsx` — 180px `Image` rendered between the depth badge and the meta rows when `report.photoUrl` is set.
+
+**Upload path:** `reports/{uid}_{timestamp}.jpg`. The photo is uploaded before `addDoc` so the Firestore document is created with `photoUrl` already set — `onReportCreate` CF sees `photoUrl` on its first read and fires `verifyImage` (for the claude-vision feature).
+
+**Verification run:** `npx tsc --noEmit` in `mobile/` → 0 errors.
+
+**Feature status:** `photo-upload` → `in_progress` (pending `firebase deploy --only storage` + live device test).
+
+**Next best action:** Implement `claude-vision` feature (priority 21) — `verifyImage.ts` is already scaffolded in `functions/src/verifyImage.ts` and called from `onReportCreate`; need to add the verification badge to the alert screen.

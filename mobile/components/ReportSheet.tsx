@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  Alert, ScrollView, ActivityIndicator,
+  Alert, ScrollView, ActivityIndicator, Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { collection, addDoc, Timestamp } from 'firebase/firestore';
-import { db, auth } from '../lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import * as ImagePicker from 'expo-image-picker';
+import { db, auth, storage } from '../lib/firebase';
 import { encodeGeohash } from '../lib/geo';
 import { DepthPicker } from './DepthPicker';
 import { ConfirmToast } from './ConfirmToast';
@@ -25,19 +27,65 @@ interface Props {
 export function ReportSheet({ location, driverMode }: Props) {
   const router = useRouter();
   const [depth, setDepth] = useState<Depth | null>(null);
+  const [photo, setPhoto] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+
+  async function pickPhoto() {
+    Alert.alert('Add Photo', 'Choose source', [
+      {
+        text: 'Camera',
+        onPress: async () => {
+          const { status } = await ImagePicker.requestCameraPermissionsAsync();
+          if (status !== 'granted') {
+            Alert.alert('Permission needed', 'Camera access is required to take a photo.');
+            return;
+          }
+          const result = await ImagePicker.launchCameraAsync({
+            allowsEditing: true, aspect: [4, 3], quality: 0.8,
+          });
+          if (!result.canceled) setPhoto(result.assets[0].uri);
+        },
+      },
+      {
+        text: 'Photo Library',
+        onPress: async () => {
+          const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+          if (status !== 'granted') {
+            Alert.alert('Permission needed', 'Photo library access is required.');
+            return;
+          }
+          const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'], allowsEditing: true, aspect: [4, 3], quality: 0.8,
+          });
+          if (!result.canceled) setPhoto(result.assets[0].uri);
+        },
+      },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  }
 
   async function submit() {
     if (!depth || !location || !auth.currentUser) return;
     setSubmitting(true);
     try {
+      // Upload photo first so the URL is available for the Firestore document
+      let photoUrl: string | undefined;
+      if (photo) {
+        const filename = `reports/${auth.currentUser.uid}_${Date.now()}.jpg`;
+        const storageRef = ref(storage, filename);
+        const blob = await fetch(photo).then(r => r.blob());
+        await uploadBytes(storageRef, blob);
+        photoUrl = await getDownloadURL(storageRef);
+      }
+
       const now = Timestamp.now();
       await addDoc(collection(db, 'reports'), {
         lat: location.lat,
         lng: location.lng,
         geohash: encodeGeohash(location.lat, location.lng),
         depth,
+        ...(photoUrl !== undefined && { photoUrl }),
         reportedAt: now,
         expiresAt: Timestamp.fromMillis(now.toMillis() + 6 * 60 * 60 * 1000),
         userId: auth.currentUser.uid,
@@ -48,7 +96,9 @@ export function ReportSheet({ location, driverMode }: Props) {
         corroborationCount: 1,
         trustScore: 60,
       });
+
       setDepth(null);
+      setPhoto(null);
       setSubmitted(true);
       // Show toast for 2 s then go to map so user sees the pin appear
       setTimeout(() => {
@@ -81,6 +131,20 @@ export function ReportSheet({ location, driverMode }: Props) {
         <Text style={styles.sectionLabel}>How deep is the water?</Text>
         <DepthPicker selected={depth} onSelect={setDepth} large={driverMode} />
 
+        <Text style={styles.sectionLabel}>Photo (optional)</Text>
+        {photo ? (
+          <View style={styles.photoPreview}>
+            <Image source={{ uri: photo }} style={styles.thumbnail} resizeMode="cover" />
+            <TouchableOpacity style={styles.removePhoto} onPress={() => setPhoto(null)}>
+              <Text style={styles.removePhotoText}>✕  Remove photo</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity style={styles.photoButton} onPress={pickPhoto} activeOpacity={0.7}>
+            <Text style={styles.photoButtonText}>📷  Add photo</Text>
+          </TouchableOpacity>
+        )}
+
         <TouchableOpacity
           style={[styles.button, (!depth || !location || submitting) && styles.buttonDisabled]}
           onPress={submit}
@@ -90,7 +154,9 @@ export function ReportSheet({ location, driverMode }: Props) {
           {submitting ? (
             <ActivityIndicator color="#fff" />
           ) : (
-            <Text style={styles.buttonText}>Submit Report</Text>
+            <Text style={styles.buttonText}>
+              {photo ? 'Submit with photo' : 'Submit Report'}
+            </Text>
           )}
         </TouchableOpacity>
       </ScrollView>
@@ -133,6 +199,35 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     color: '#333',
+  },
+  photoButton: {
+    borderWidth: 1.5,
+    borderColor: '#ddd',
+    borderStyle: 'dashed',
+    borderRadius: 12,
+    paddingVertical: 18,
+    alignItems: 'center',
+    backgroundColor: '#fafafa',
+  },
+  photoButtonText: {
+    fontSize: 15,
+    color: '#555',
+  },
+  photoPreview: {
+    gap: 10,
+  },
+  thumbnail: {
+    width: '100%',
+    height: 180,
+    borderRadius: 12,
+  },
+  removePhoto: {
+    alignSelf: 'center',
+  },
+  removePhotoText: {
+    color: '#E24B4A',
+    fontSize: 14,
+    fontWeight: '600',
   },
   button: {
     backgroundColor: '#E24B4A',

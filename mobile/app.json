@@ -28,6 +28,13 @@
       "expo-router",
       "expo-notifications",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow Flood Up to attach photos as flood evidence.",
+          "cameraPermission": "Allow Flood Up to take photos of flood conditions."
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",

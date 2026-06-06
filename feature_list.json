@@ -208,15 +208,15 @@
       "area": "reporting",
       "title": "Optional photo attachment on report",
       "user_visible_behavior": "After selecting depth, user can optionally add a photo (camera or gallery). Photo uploads to Firebase Storage. photoUrl is stored on the report document.",
-      "status": "not_started",
+      "status": "in_progress",
       "verification": [
-        "Tap photo icon in ReportSheet → camera/gallery picker opens",
-        "Select a photo → thumbnail previews in the form",
-        "Submit → photo uploaded to Firebase Storage, photoUrl set on Firestore document",
-        "Photo visible when tapping the pin detail"
+        "Tap 'Add photo' in ReportSheet → Alert with Camera / Photo Library / Cancel",
+        "Select a photo → 180px thumbnail previews in the form with 'Remove photo' link",
+        "Submit → photo uploaded to Storage at reports/{uid}_{timestamp}.jpg → photoUrl in Firestore doc",
+        "Photo visible as 180px image in alert.tsx detail sheet when photoUrl is set"
       ],
-      "evidence": "",
-      "notes": "Nice-to-have for demo polish. Required before claude-vision feature."
+      "evidence": "expo-image-picker ~56.0.16 installed. firebase.ts: exports storage = getStorage(app). ReportSheet.tsx: photo state (string|null); pickPhoto() shows Alert with Camera/PhotoLibrary options, requests permissions before each; thumbnail + Remove link when set; submit() uploads via fetch→blob→uploadBytes→getDownloadURL before addDoc, spreads photoUrl into doc only when defined; submit button label changes to 'Submit with photo'. alert.tsx: Image rendered between depth badge and meta rows when report.photoUrl exists. storage.rules: authenticated write only, max 10MB, contentType matches image/.*; public read. firebase.json: storage.rules wired. app.json: expo-image-picker plugin with camera+photos permission strings. TypeScript: 0 errors. Requires firebase deploy --only storage + live device test.",
+      "notes": "Photo is uploaded before addDoc so photoUrl is in the Firestore document from creation (not a two-step patch). Storage path: reports/{uid}_{timestamp}.jpg. onReportCreate CF already handles photoUrl for Claude Vision (priority 21)."
     },
     {
       "id": "claude-vision",
