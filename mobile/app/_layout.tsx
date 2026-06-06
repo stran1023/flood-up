@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useFonts } from 'expo-font';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Notifications from 'expo-notifications';
@@ -81,6 +82,7 @@ function RootLayoutNav() {
   }, [lastResponse, user, router]);
 
   return (
+    <SafeAreaProvider>
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="(tabs)"      options={{ headerShown: false }} />
@@ -90,5 +92,6 @@ function RootLayoutNav() {
         <Stack.Screen name="alert"       options={{ presentation: 'modal', title: 'Flood Alert' }} />
       </Stack>
     </ThemeProvider>
+    </SafeAreaProvider>
   );
 }
