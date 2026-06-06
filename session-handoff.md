@@ -1,6 +1,6 @@
 # session-handoff.md — Session Handoff Notes
 
-_Fill this out at the end of every session. The next session reads this before doing anything._
+_Updated: 2026-06-06 (Session 19)_
 
 ---
 
@@ -8,61 +8,94 @@ _Fill this out at the end of every session. The next session reads this before d
 
 | Item | Status | Verification run |
 |---|---|---|
-| TypeScript compiles (mobile/) | Not applicable — not scaffolded yet | — |
-| TypeScript compiles (functions/) | Not applicable — not scaffolded yet | — |
-| TypeScript compiles (dashboard/) | Not applicable — not scaffolded yet | — |
-| Firebase project connected | Not started | — |
+| TypeScript compiles (mobile/) | ✓ 0 errors | Session 19 |
+| TypeScript compiles (functions/) | ✓ 0 errors | Session 18 |
+| `./init.sh` baseline | ✓ passes | Session 19 |
+| Firebase project connected | ✓ credentials in mobile/.env | Session 3 |
 
-**Last passing baseline:** No code exists yet.
+**Last passing baseline:** `./init.sh` → `✓ Baseline OK — all packages install and compile cleanly.`
 
 ---
 
-## Changes this session (2026-06-03)
+## Implementation status
 
-- Completed architectural review of CLAUDE.md
-- Rewrote CLAUDE.md with 15 bug fixes and architecture improvements (see `claude-progress.md` for full list)
-- Created harness file set: `init.sh`, `claude-progress.md`, `feature_list.json`, `session-handoff.md`, `clean-state-checklist.md`, `evaluator-rubric.md`, `quality-document.md`
-- No code written — pre-implementation architecture phase only
+All features implemented (see `feature_list.json` for full details):
+
+| Feature | Status | Blocker |
+|---|---|---|
+| firebase-setup | passing | — |
+| auth | passing | — |
+| home-location | in_progress | live device test |
+| report-submit | in_progress | live device + CF deploy |
+| live-map | in_progress | live device test |
+| flood-route-overlay | in_progress | live device + API key |
+| corroboration | in_progress | live Firebase + 3-report test |
+| severity-fastpath | in_progress | live deploy + EAS projectId |
+| push-notifications | in_progress | live 3-report + 2-device test |
+| auto-expiry | in_progress | `firebase deploy --only functions` |
+| upvote-downvote | in_progress | live 2-device test |
+| disputed-status | in_progress | live deploy + Firestore console test |
+| photo-upload | in_progress | `firebase deploy --only storage` + live device |
+| claude-vision | in_progress | `ANTHROPIC_API_KEY` in functions/.env + deploy |
+| weather-check | in_progress | live device + CF deploy |
+| geojson-overlay | in_progress | live device test |
+| driver-mode | in_progress | role='driver' in Firestore + live device |
+
+No `not_started` features remain. All blockers require live deployment or a physical device.
+
+---
+
+## What still needs doing before demo
+
+**One-time setup (human steps):**
+
+1. **EAS project ID** — run `cd mobile && eas init` and replace `REPLACE_WITH_EAS_PROJECT_ID` in `mobile/app.json` with the real ID. Required for push notifications.
+2. **Firebase deploy** — run:
+   ```bash
+   firebase deploy --only firestore:rules,firestore:indexes
+   firebase deploy --only functions
+   firebase deploy --only storage
+   ```
+3. **`functions/.env`** — add `ANTHROPIC_API_KEY=sk-ant-...` for Claude Vision.
+4. **GCP Console** — enable "Directions API" and "Roads API" for the Maps API key.
+5. **Firebase Console** — enable Anonymous auth (Auth → Sign-in method → Anonymous → Enable).
+6. **Firestore Console** — set `users/{driverUid} → role: 'driver'` for the demo driver account.
+
+**Demo shortcut for auto-expiry:** Firebase Console → Functions → expireReports → Actions → Trigger (no need to wait 30 min).
 
 ---
 
 ## Still broken or unverified
 
-- Everything — no implementation files exist yet
-- Severity fast-path threshold (trustScore >= 65) may be unreachable in dry-weather demo without adjustment
+- No live device test has been run — all `in_progress` features need on-device confirmation.
+- Severity fast-path trustScore threshold (base 70, threshold 65): on-road + rainy = 70 ✓ fires; on-road + dry = 55, no fast-path (intended).
+- `EAS projectId` is a placeholder in `app.json` (`REPLACE_WITH_EAS_PROJECT_ID`) — must be replaced before push notifications work.
+- `functions/.env` must have `ANTHROPIC_API_KEY` before deploying (Claude Vision will silently fail without it — report is still created, `photoVerified` stays undefined).
 
 ---
 
 ## Next best action
 
-1. Run `firebase login` and `firebase projects:create flood-up-[id]`
-2. Scaffold mobile: `npx create-expo-app mobile --template blank-typescript`
-3. Scaffold functions: `firebase init functions` (TypeScript)
-4. Scaffold dashboard: `npm create vite@latest dashboard -- --template react-ts`
-5. Deploy Firestore indexes and security rules from CLAUDE.md
-6. Mark `firebase-setup` as `passing` in `feature_list.json` once verified
-
-**Do not touch:** Nothing is implemented yet — start from `firebase-setup` (priority 1).
+Run the one-time setup steps above, deploy Firebase, and verify each feature on a real device. Start with `report-submit` (priority 4) as it exercises the core Firestore path that most other features depend on.
 
 ---
 
-## Commands
+## Key commands
 
 ```bash
-# Startup
+# Baseline check
 ./init.sh
 
-# Verification
-cd mobile && npx tsc --noEmit
-cd functions && npx tsc --noEmit
-cd dashboard && npx tsc --noEmit
+# TypeScript verify
+cd mobile && ./node_modules/.bin/tsc --noEmit
+cd functions && ./node_modules/.bin/tsc --noEmit
 
-# Dev servers
+# Dev server (Expo)
 cd mobile && npx expo start
-cd dashboard && npx vite
-cd functions && npm run serve
 
-# Firebase deploy
-firebase deploy --only firestore:rules,firestore:indexes
-firebase deploy --only functions
+# Firebase deploy (all at once)
+firebase deploy --only firestore:rules,firestore:indexes,functions,storage
+
+# EAS build (after eas init)
+cd mobile && eas build --profile development --platform android
 ```
