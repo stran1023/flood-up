@@ -167,3 +167,33 @@
 - Only after those steps can status move to `passing`
 
 **Next best action:** Implement `report-submit` feature (priority 4), or run the live device verification for `home-location` to move it to `passing`.
+
+---
+
+### Session 6 — 2026-06-06 (continued)
+
+**Goal:** Implement `report-submit` feature (priority 4).
+
+**Completed:**
+
+- `mobile/components/ReportSheet.tsx` — fixed three gaps in the scaffold:
+  1. `accountAgeDays` now computed from `auth.currentUser.metadata.creationTime` instead of hardcoded `0`
+  2. Wrapped `ScrollView` + `ConfirmToast` in a `View style={{flex:1}}` so the toast's `position:absolute` is anchored to the screen viewport, not the scroll container
+  3. Added `ActivityIndicator` during submission; after 2 s auto-navigates to map tab so user sees the pin appear
+- `mobile/hooks/useLocation.ts` — replaced `useEffect([], [])` with `useFocusEffect(useCallback(...))` so GPS refreshes each time the Report tab is focused (tab screens stay mounted; one-time fetch would give stale location after tab switch)
+
+**All Firestore fields already scaffolded correctly:**
+- `lat`, `lng`, `geohash` (precision 7 via `encodeGeohash` → `geohashForLocation`)
+- `depth`, `reportedAt`, `expiresAt` (reportedAt + 6 h), `userId`
+- `status='pending'`, `trustScore=60`, `corroborationCount=1`, `upvotes=0`, `downvotes=0`
+
+**Verification run:** `npx tsc --noEmit` in `mobile/` → 0 TypeScript errors.
+
+**Feature status:** `report-submit` → `in_progress` (pending live device test + Cloud Function deploy).
+
+**What is NOT done (requires live device + Firebase deploy):**
+- Run on real device: tap Report tab → GPS fills → select depth → submit → ConfirmToast → redirects to map
+- Check Firestore console: document created with correct fields
+- Deploy `onReportCreate` Cloud Function (`firebase deploy --only functions`) and check logs
+
+**Next best action:** Implement `live-map` feature (priority 5) — real-time Firestore listener already exists in `useReports`, but map needs pin detail sheet, depth-color verification on device, and real-time update test.

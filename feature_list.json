@@ -53,7 +53,7 @@
       "area": "reporting",
       "title": "Flood report submission",
       "user_visible_behavior": "User taps Report button; GPS auto-fills location; user selects depth; tapping Submit writes a document to Firestore `reports` collection; ConfirmToast appears; pin appears on map within ~15 seconds",
-      "status": "not_started",
+      "status": "in_progress",
       "verification": [
         "Tap Report button → ReportSheet slides up",
         "GPS location auto-fills (latitude + longitude shown)",
@@ -62,8 +62,8 @@
         "Check Firestore `reports` collection — document created with correct fields: lat, lng, geohash, depth, userId, status='pending', trustScore=60, corroborationCount=1, expiresAt=reportedAt+6h",
         "Confirm `onReportCreate` Cloud Function ran (check Firebase Function logs)"
       ],
-      "evidence": "",
-      "notes": "geohash must use precision 7. expiresAt must be exactly reportedAt + 6 hours."
+      "evidence": "ReportSheet.tsx: addDoc with lat/lng/geohash(precision 7)/depth/reportedAt/expiresAt(+6h)/userId/accountAgeDays(computed from metadata.creationTime)/upvotes=0/downvotes=0/status=pending/corroborationCount=1/trustScore=60. ConfirmToast rendered as sibling to ScrollView inside wrapper View (position:absolute anchored correctly). After 2s navigates to map tab. useLocation.tsx: useFocusEffect re-fetches GPS on each tab focus. TypeScript: 0 errors. Requires live device test + onReportCreate Cloud Function deploy to move to passing.",
+      "notes": "geohash must use precision 7. expiresAt must be exactly reportedAt + 6 hours. onReportCreate Cloud Function needs to be deployed to Firebase to verify trust pipeline."
     },
     {
       "id": "live-map",
