@@ -37,7 +37,7 @@ export const onReportCreate = onDocumentCreated(
       getLastReport(userId, reportId),
     ]);
 
-    let trustScore = 60;
+    let trustScore = 70;
 
     // GPS plausibility — soft penalty
     if (!onRoad) trustScore -= 25;

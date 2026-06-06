@@ -1,7 +1,30 @@
 import { onDocumentUpdated } from 'firebase-functions/v2/firestore';
-import { db, messaging, FieldValue } from './admin';
+import { db, FieldValue } from './admin';
 import { getUsersNearby } from './geo';
 import type { Depth, FloodReport } from './types';
+
+type ExpoMessage = {
+  to: string;
+  title: string;
+  body: string;
+  data: Record<string, string>;
+  sound: 'default';
+};
+
+type ExpoTicket = {
+  status: 'ok' | 'error';
+  details?: { error?: string };
+};
+
+async function sendExpo(messages: ExpoMessage[]): Promise<ExpoTicket[]> {
+  const res = await fetch('https://exp.host/--/api/v2/push/send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify(messages),
+  });
+  const json = (await res.json()) as { data: ExpoTicket[] };
+  return json.data;
+}
 
 export async function sendNearbyNotifications(
   reportId: string,
@@ -13,28 +36,24 @@ export async function sendNearbyNotifications(
   const users = await getUsersNearby([lat, lng], 2);
   if (users.length === 0) return;
 
-  const title = options.preliminary
-    ? 'Unverified flood report nearby'
-    : 'Flood confirmed nearby';
+  const title = options.preliminary ? 'Unverified flood report nearby' : 'Flood confirmed nearby';
   const body = `${depth.charAt(0).toUpperCase() + depth.slice(1)}-deep flooding reported in your area`;
 
   await Promise.all(
     users.map(async user => {
-      const tokens = user.fcmTokens ?? [];
+      const tokens = (user.fcmTokens ?? []).filter(t => t.startsWith('ExponentPushToken'));
       if (tokens.length === 0) return;
 
-      const response = await messaging.sendEachForMulticast({
-        tokens,
-        notification: { title, body },
+      const messages: ExpoMessage[] = tokens.map(to => ({
+        to, title, body, sound: 'default',
         data: { reportId, depth, preliminary: String(options.preliminary) },
-      });
+      }));
+
+      const tickets = await sendExpo(messages);
 
       const staleTokens = tokens.filter(
-        (_, i) =>
-          response.responses[i].error?.code ===
-          'messaging/registration-token-not-registered'
+        (_, i) => tickets[i]?.status === 'error' && tickets[i]?.details?.error === 'DeviceNotRegistered'
       );
-
       if (staleTokens.length > 0) {
         await db.collection('users').doc(user.uid).update({
           fcmTokens: FieldValue.arrayRemove(...staleTokens),

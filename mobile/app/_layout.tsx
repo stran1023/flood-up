@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useFonts } from 'expo-font';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import * as Notifications from 'expo-notifications';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
@@ -40,6 +41,7 @@ function RootLayoutNav() {
   // the dev server regenerates .expo/types/router.d.ts after screens are added.
   const segments = useSegments() as string[];
   const router = useRouter();
+  const lastResponse = Notifications.useLastNotificationResponse();
 
   useEffect(() => {
     if (loading) return;
@@ -60,6 +62,13 @@ function RootLayoutNav() {
       router.replace('/home-setup' as any);
     }
   }, [user, loading, segments, router, needsHomeSetup]);
+
+  // Navigate to alert screen when user taps a push notification
+  useEffect(() => {
+    const reportId = lastResponse?.notification?.request?.content?.data?.reportId as string | undefined;
+    if (!reportId || !user) return;
+    router.push({ pathname: '/alert', params: { reportId } });
+  }, [lastResponse, user, router]);
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>

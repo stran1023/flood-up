@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
 
@@ -17,9 +18,8 @@ export function useNotifications() {
   useEffect(() => {
     register();
 
-    // Refresh token when FCM rotates it
     const sub = Notifications.addPushTokenListener(token => {
-      saveToken(token.data);
+      if (token.data) saveToken(token.data);
     });
     return () => sub.remove();
   }, []);
@@ -28,8 +28,21 @@ export function useNotifications() {
 async function register() {
   const { status } = await Notifications.requestPermissionsAsync();
   if (status !== 'granted') return;
-  const token = (await Notifications.getExpoPushTokenAsync()).data;
-  saveToken(token);
+
+  const projectId =
+    Constants.expoConfig?.extra?.eas?.projectId ??
+    Constants.easConfig?.projectId;
+  if (!projectId) {
+    console.warn('[notifications] No EAS projectId — add eas.json to enable push notifications');
+    return;
+  }
+
+  try {
+    const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId });
+    await saveToken(token);
+  } catch (e) {
+    console.warn('[notifications] getExpoPushTokenAsync failed:', e);
+  }
 }
 
 async function saveToken(token: string) {

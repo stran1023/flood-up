@@ -122,15 +122,16 @@
       "area": "notifications",
       "title": "Severity fast-path preliminary alert",
       "user_visible_behavior": "A single waist or chest depth report with trustScore >= 65 immediately triggers a push notification to nearby users, labelled 'Unverified report nearby'. This fires without waiting for 3 corroborations.",
-      "status": "not_started",
+      "status": "in_progress",
       "verification": [
-        "Submit a 'chest' depth report from a fresh account (trustScore starts at 60; no penalties should apply for an on-road, rainy-day submission → trustScore >= 65)",
-        "Second device within 2km receives FCM notification within ~10 seconds",
-        "Notification title includes 'Unverified' or 'Preliminary' label",
-        "Check Cloud Function logs — notifyNearby called with preliminary=true"
+        "Submit a 'chest' depth report from a fresh account on-road in rainy conditions (trustScore = 70 base, no penalties → 70 >= 65 ✓)",
+        "Second device within 2km receives Expo push notification within ~10 seconds",
+        "Notification title is 'Unverified flood report nearby'",
+        "Check Cloud Function logs — sendNearbyNotifications called with preliminary=true",
+        "Tap notification on second device → app opens to /alert?reportId=... screen"
       ],
-      "evidence": "",
-      "notes": "trustScore = 60 base. If no GPS penalty and no weather penalty, score stays at 60 — below the 65 threshold. Demo setup must ensure at least one check passes (e.g. simulate rainfall > 1mm). Consider lowering threshold to 60 or adjusting base score to 70 if demo conditions are dry."
+      "evidence": "onReportCreate.ts: base trustScore raised to 70 so on-road+rainy reports (no penalties) reach 70 >= 65 threshold. notifyNearby.ts: replaced Firebase Admin SDK messaging.sendEachForMulticast with Expo Push API (POST https://exp.host/--/api/v2/push/send) — correct for Expo managed workflow with Expo push tokens. Stale token cleanup uses Expo DeviceNotRegistered error code. useNotifications.ts: getExpoPushTokenAsync now passes projectId from Constants.expoConfig?.extra?.eas?.projectId (required in SDK 56); fails gracefully with console.warn if not configured. _layout.tsx: Notifications.useLastNotificationResponse() navigates to /alert?reportId=... when user taps a notification. app.json: expo-notifications plugin added. admin.ts: removed unused messaging export. TypeScript: 0 errors in functions/ and mobile/. Requires EAS projectId in eas.json + live device + Cloud Function deploy to move to passing.",
+      "notes": "trustScore base is now 70. On-road + rainy (no penalties) = 70 >= 65 → fast-path fires. On-road + dry = 55 → no fast-path (intended). Expo Push API used instead of Firebase Admin SDK — requires EAS projectId configured in eas.json for Expo token registration to succeed."
     },
     {
       "id": "push-notifications",

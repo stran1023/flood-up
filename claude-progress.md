@@ -247,3 +247,34 @@
 - Verify mobile: confirmed pins appear at full opacity, pending at 65%
 
 **Next best action:** Implement `severity-fastpath` feature (priority 8) — logic is scaffolded in `onReportCreate.ts` lines 93–95; needs trustScore threshold review and demo-condition check (base 60 − weather 15 = 45, below the 65 threshold in dry weather).
+
+---
+
+### Session 9 — 2026-06-06 (continued)
+
+**Goal:** Implement `severity-fastpath` feature (priority 8).
+
+**Four bugs fixed:**
+
+1. **trustScore threshold unreachable** — base was 60, threshold was 65. Maximum score (no penalties) = 60 < 65 → fast-path could never fire. Raised base to 70 in `onReportCreate.ts`. New behavior: on-road + rainy = 70 ≥ 65 ✓; on-road + dry = 55 → no fast-path (intended).
+
+2. **Expo token vs FCM token mismatch** — `useNotifications.ts` stored Expo push tokens (`ExponentPushToken[...]`) but `notifyNearby.ts` called Firebase Admin SDK `messaging.sendEachForMulticast` which needs native FCM registration tokens. Tokens were incompatible. Fixed by rewriting `notifyNearby.ts` to use Expo Push API (`POST https://exp.host/--/api/v2/push/send`) — the correct approach for Expo managed workflow.
+
+3. **`getExpoPushTokenAsync` missing `projectId`** — SDK 56 requires `projectId` param. Added lookup via `Constants.expoConfig?.extra?.eas?.projectId` with `console.warn` fallback if not configured.
+
+4. **No notification tap handler** — tapping a notification had no effect. Added `Notifications.useLastNotificationResponse()` hook in `_layout.tsx`; when `data.reportId` is present and user is authenticated, navigates to `/alert?reportId=...`.
+
+**Other cleanup:**
+- Removed unused `messaging` export from `functions/src/admin.ts`
+- Added `expo-notifications` plugin to `mobile/app.json`
+
+**Verification run:** `npx tsc --noEmit` in `functions/` → 0 errors. `npx tsc --noEmit` in `mobile/` → 0 errors.
+
+**Feature status:** `severity-fastpath` → `in_progress` (pending live device + Cloud Function deploy).
+
+**What is NOT done (requires deploy + live device + EAS config):**
+- `eas.json` with EAS project ID needed for `getExpoPushTokenAsync({ projectId })` to succeed
+- Deploy `onReportCreate` + `notifyNearby` Cloud Functions
+- Submit chest-depth report as test user on-road in rainy conditions → check CF logs → second device receives notification
+
+**Next best action:** Implement `push-notifications` feature (priority 9) — shares the same `sendNearbyNotifications` infrastructure; needs to verify confirmed-report trigger path and `getUsersNearby` query coverage.
