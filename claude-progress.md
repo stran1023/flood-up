@@ -334,3 +334,27 @@ The existing `expireReports.ts` was functionally correct but had two inefficienc
 **Demo shortcut:** Firebase console → Functions → expireReports → Actions → "Trigger". No need to wait 30 min. Set `expiresAt` to 1 minute in the past via Firestore console first.
 
 **Next best action:** Implement `upvote-downvote` feature (priority 11) — upvote/downvote buttons exist in `alert.tsx` and write to Firestore; need to verify security rule allows only those two fields to be updated by non-owners, and add real-time count update to the alert screen.
+
+---
+
+### Session 12 — 2026-06-06 (continued)
+
+**Goal:** Implement `upvote-downvote` feature (priority 11).
+
+**Findings — nearly complete in scaffold; one fix applied:**
+
+Everything was already correct except the data subscription:
+- `vote('upvotes'/'downvotes')` uses `updateDoc` + `increment(1)` — atomic, no race condition ✓
+- Optimistic local `setReport` updates the count immediately before the server roundtrip ✓
+- `firestore.rules`: non-owner update rule already uses `affectedKeys().hasOnly(['upvotes','downvotes'])` ✓
+- Vote buttons render `report.upvotes` and `report.downvotes` counts ✓
+
+**Fix applied:** Switched `alert.tsx` data subscription from `getDoc` (one-shot) to `onSnapshot` (live listener). Without this, a second device voting on the same report would not update the counts visible to the first device until the sheet was closed and reopened. `onSnapshot` fires on every document change, so both the optimistic local update and subsequent votes from other devices appear immediately. The `useEffect` cleanup returns `unsub()` to prevent the listener leaking when the sheet is closed.
+
+**Bonus:** `onSnapshot` also delivers status changes (e.g. `pending → confirmed → disputed`) in real time without any extra code.
+
+**Verification run:** `npx tsc --noEmit` in `mobile/` → 0 errors.
+
+**Feature status:** `upvote-downvote` → `in_progress` (pending live 2-device test).
+
+**Next best action:** Implement `disputed-status` feature (priority 12) — `onReportUpdate` trigger in `notifyNearby.ts` already has the dispute logic; verify thresholds and add disputed visual state to `FloodPin.tsx`.

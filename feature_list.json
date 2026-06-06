@@ -174,7 +174,7 @@
       "area": "reporting",
       "title": "Still flooded / Looks clear upvote and downvote",
       "user_visible_behavior": "Tapping a map pin shows upvote ('Still flooded') and downvote ('Looks clear') buttons. Tapping increments the corresponding counter on the Firestore document. Counts update in real time.",
-      "status": "not_started",
+      "status": "in_progress",
       "verification": [
         "Tap a pin → detail sheet shows current upvote and downvote counts",
         "Tap 'Still flooded' → Firestore upvotes field increments by 1",
@@ -182,8 +182,8 @@
         "Second device sees updated counts without refresh",
         "Firestore security rules only allow upvotes/downvotes to be updated (not other fields)"
       ],
-      "evidence": "",
-      "notes": "Use FieldValue.increment(1) to avoid race conditions. Firestore security rule must restrict update to only ['upvotes','downvotes'] keys."
+      "evidence": "alert.tsx: switched from getDoc (one-shot) to onSnapshot (live listener) so vote counts update in real time on all devices viewing the same report; unsub returned from useEffect for cleanup. vote() uses updateDoc + increment(1) (atomic, no race condition). Optimistic local setReport runs immediately; onSnapshot confirms with server value moments later. firestore.rules: non-owner update restricted to affectedKeys().hasOnly(['upvotes','downvotes']) — already correct from session 2. TypeScript: 0 errors. Requires live device test to move to passing.",
+      "notes": "onSnapshot on the alert doc also picks up status changes (e.g. confirmed → disputed) in real time, which is a free bonus. No per-user vote deduplication — acceptable for demo scope."
     },
     {
       "id": "disputed-status",

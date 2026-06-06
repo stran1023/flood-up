@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { doc, getDoc, updateDoc, increment, type Timestamp } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, increment, type Timestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { DEPTH_CONFIG } from '../constants/depth';
 import type { FloodReport } from '../types';
@@ -22,9 +22,10 @@ export default function AlertScreen() {
 
   useEffect(() => {
     if (!reportId) return;
-    getDoc(doc(db, 'reports', reportId)).then(snap => {
+    const unsub = onSnapshot(doc(db, 'reports', reportId), snap => {
       if (snap.exists()) setReport({ id: snap.id, ...snap.data() } as FloodReport);
     });
+    return unsub;
   }, [reportId]);
 
   async function vote(field: 'upvotes' | 'downvotes') {
