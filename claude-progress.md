@@ -7,8 +7,8 @@
 | Repository root | `D:\flood-up` (Windows) / `/d/flood-up` (Git Bash) |
 | Standard startup | `./init.sh` |
 | Standard verification | `npx tsc --noEmit` in each of `mobile/`, `functions/`, `dashboard/` |
-| Highest-priority unfinished feature | `auth` (priority 2) |
-| Current blocker | Firebase project not yet connected (no real `.env` credentials) |
+| Highest-priority unfinished feature | `home-location` (priority 3) |
+| Current blocker | None — Firebase credentials connected, auth implemented |
 | Last verified baseline | `init.sh` passes clean — all three packages install and compile |
 
 ---
@@ -92,3 +92,27 @@
 - Node 22 in dev vs Node 18 in Cloud Functions — no code impact, but deploy uses Node 18.
 
 **Next best action:** Connect a real Firebase project (fill `.env` files + update `.firebaserc`), then deploy rules/indexes, then implement the `auth` feature (priority 2).
+
+---
+
+### Session 3 — 2026-06-06 (continued)
+
+**Goal:** Connect Firebase project credentials and implement `auth` feature (priority 2).
+
+**Completed:**
+
+- `mobile/.env` and `dashboard/.env` created with real Firebase credentials (project: `flood-up`)
+- `.firebaserc` updated with project ID `flood-up`
+- `mobile/hooks/useAuth.ts` — `onAuthStateChanged` listener; calls `ensureUserDoc` which creates Firestore `users` doc (`role='resident'`, `reportCount=0`, `trustScore=0`, `fcmTokens=[]`) on first sign-in
+- `mobile/app/auth.tsx` — email/password login + sign-up (toggled), anonymous sign-in button, error messages for common Firebase error codes
+- `mobile/app/_layout.tsx` — auth guard using `useSegments` + `useRouter`; unauthenticated users redirected to `/auth`, authenticated users on `/auth` redirected to `/(tabs)`. Also registered `alert` screen here.
+
+**Note on anonymous auth:** Requires enabling in Firebase console → Authentication → Sign-in method → Anonymous → Enable. Email/Password is sufficient for demo.
+
+**Note on `.env` files:** Not committed to git (covered by root `.gitignore` `*.env` pattern). Credentials are for Firebase project `flood-up`.
+
+**Verification run:** `./init.sh` → `✓ Baseline OK`. All three packages compile with 0 TypeScript errors.
+
+**Feature status moved to:** `auth` → `passing`.
+
+**Next best action:** Implement `home-location` feature (priority 3) — GPS prompt on first login, write `homeLat`, `homeLng`, `homeGeohash` to Firestore user document.

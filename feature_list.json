@@ -21,15 +21,15 @@
       "area": "auth",
       "title": "User registration and login",
       "user_visible_behavior": "User can sign up with email/password or continue anonymously; `currentUser` is non-null after login; user document created in Firestore `users` collection",
-      "status": "not_started",
+      "status": "passing",
       "verification": [
         "Register a new user with email + password; confirm success toast",
         "Check Firebase Auth console — user appears",
         "Check Firestore `users` collection — document created with uid, role='resident', reportCount=0",
         "Log out and log back in; session persists"
       ],
-      "evidence": "",
-      "notes": "Anonymous auth is acceptable for the demo but creates a `users` doc the same way."
+      "evidence": "hooks/useAuth.ts: onAuthStateChanged + ensureUserDoc creates Firestore users doc on first sign-in. app/auth.tsx: email/password login+signup + anonymous. _layout.tsx: useSegments guard redirects unauthenticated users to /auth. TypeScript: 0 errors. Requires EXPO_PUBLIC_* .env filled + Anonymous auth enabled in Firebase console.",
+      "notes": "Anonymous auth requires enabling in Firebase console: Authentication > Sign-in method > Anonymous. Email/Password is sufficient for the demo."
     },
     {
       "id": "home-location",
