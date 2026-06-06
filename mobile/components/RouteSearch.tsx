@@ -2,6 +2,7 @@ import { useState } from 'react';
 import {
   View, TextInput, TouchableOpacity, Text, ActivityIndicator, StyleSheet,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import type { RouteResult } from '../hooks/useRoute';
 
@@ -15,6 +16,7 @@ interface Props {
 
 export function RouteSearch({ route, loading, error, onSearch, onClear }: Props) {
   const [text, setText] = useState('');
+  const { top } = useSafeAreaInsets();
 
   function handleSubmit() {
     const dest = text.trim();
@@ -30,7 +32,7 @@ export function RouteSearch({ route, loading, error, onSearch, onClear }: Props)
   const showBanner = route !== null || error !== null;
 
   return (
-    <View style={styles.container} pointerEvents="box-none">
+    <View style={[styles.container, { top }]} pointerEvents="box-none">
       <View style={styles.inputRow}>
         <MaterialIcons name="directions" size={20} color="#3B82F6" />
         <TextInput
