@@ -1,0 +1,80 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": { "name": "District 8 – Rạch Ông lowland" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [106.646, 10.741],
+          [106.664, 10.741],
+          [106.664, 10.753],
+          [106.655, 10.758],
+          [106.646, 10.753],
+          [106.646, 10.741]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Bình Thạnh – Thanh Đa peninsula" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [106.714, 10.806],
+          [106.726, 10.806],
+          [106.731, 10.820],
+          [106.720, 10.828],
+          [106.710, 10.820],
+          [106.714, 10.806]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "District 4 – riverside lowland" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [106.695, 10.751],
+          [106.707, 10.751],
+          [106.710, 10.760],
+          [106.700, 10.765],
+          [106.692, 10.760],
+          [106.695, 10.751]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "District 12 – Vàm Thuật basin" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [106.665, 10.843],
+          [106.681, 10.843],
+          [106.685, 10.857],
+          [106.673, 10.863],
+          [106.660, 10.857],
+          [106.665, 10.843]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "name": "Thủ Đức – Suối Nhum area" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [106.757, 10.843],
+          [106.773, 10.843],
+          [106.778, 10.854],
+          [106.765, 10.860],
+          [106.752, 10.854],
+          [106.757, 10.843]
+        ]]
+      }
+    }
+  ]
+}

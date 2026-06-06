@@ -258,15 +258,15 @@
       "area": "map",
       "title": "Historical flood zone GeoJSON overlay",
       "user_visible_behavior": "Map shows a semi-transparent polygon overlay of historically flood-prone zones, loaded from a static GeoJSON file bundled with the app.",
-      "status": "not_started",
+      "status": "in_progress",
       "verification": [
         "GeoJSON file present in mobile/assets/",
         "Map shows overlay polygons on load",
         "Overlay is semi-transparent and does not obscure flood pins",
         "Works offline (static file, no network request)"
       ],
-      "evidence": "",
-      "notes": "Static file — no backend needed. Use Mapbox or Google Maps GeoJSON layer API."
+      "evidence": "mobile/assets/flood-zones.geojson: FeatureCollection with 5 Polygon features covering historically flood-prone HCMC areas (District 8, Bình Thạnh Thanh Đa, District 4, District 12, Thủ Đức). FloodMap.tsx: require('../assets/flood-zones.geojson') cast as FeatureCollection; rendered as <Geojson fillColor='rgba(0,100,220,0.18)' strokeColor='rgba(0,100,220,0.55)' strokeWidth={1.5}> inside MapView before FloodPin markers so pins always appear on top. react-native-maps Geojson component used (bundled with existing package, no new install). TypeScript: 0 errors. Requires live device test to confirm polygon rendering.",
+      "notes": "GeoJSON is bundled statically (require()) — no network call, works offline. Polygons rendered before markers so flood pins are never obscured. fillColor uses 18% opacity to stay unobtrusive."
     },
     {
       "id": "dashboard",

@@ -501,3 +501,30 @@ All four files were already complete and wired into `index.tsx`:
 **Feature status:** `flood-route-overlay` → `in_progress` (pending `EXPO_PUBLIC_GOOGLE_DIRECTIONS_API_KEY` in `mobile/.env` + live device test).
 
 **Demo setup:** Add `EXPO_PUBLIC_GOOGLE_DIRECTIONS_API_KEY=<key>` to `mobile/.env`. Enable "Directions API" in GCP console for the key. If key is absent, the error banner fires immediately on search.
+
+---
+
+### Session 19 — 2026-06-06 (continued)
+
+**Goal:** Implement `geojson-overlay` feature (priority 23).
+
+**Completed (2 files):**
+
+- `mobile/assets/flood-zones.geojson` (new) — `FeatureCollection` with 5 `Polygon` features covering historically flood-prone HCMC areas: District 8 (Rạch Ông lowland), Bình Thạnh (Thanh Đa peninsula), District 4 (riverside lowland), District 12 (Vàm Thuật basin), Thủ Đức (Suối Nhum area). Coordinates are realistic neighborhood-scale polygons around the HCMC city center.
+
+- `mobile/components/FloodMap.tsx` — imports `Geojson` from `react-native-maps` (already bundled, no new package) and `FeatureCollection` type from `@types/geojson`. GeoJSON loaded with `require('../assets/flood-zones.geojson')`. `<Geojson>` rendered as the first child of `MapView` (before `FloodPin` markers and `RouteOverlay`), so flood pins always appear on top. Style: `fillColor="rgba(0,100,220,0.18)"` (18% opacity blue), `strokeColor="rgba(0,100,220,0.55)"`, `strokeWidth={1.5}`.
+
+**Design notes:**
+- `require()` bundles the GeoJSON at build time — no network call, fully offline.
+- Rendering order: `Geojson` → `FloodPin` → `RouteOverlay`. Markers always float above polygon layers in react-native-maps regardless of JSX order, but render-first ensures correct z-ordering on both iOS and Android.
+- 18% fill opacity keeps the polygons visible as background context without obscuring roads or pin callouts.
+
+**Verification run:** `npx tsc --noEmit` in `mobile/` → 0 TypeScript errors.
+
+**Feature status:** `geojson-overlay` → `in_progress` (pending live device test to confirm polygon rendering).
+
+**What is NOT done (requires live device):**
+- Run on a real device or simulator and zoom to the HCMC area to confirm polygons render
+- Confirm pins remain visible and tappable above the polygon layer
+
+**Next best action:** All features (priorities 1–25) are now implemented (2 `passing`, rest `in_progress` pending live deploy/device tests). All implementation work is complete — remaining steps are deployment and live verification for the Vietnam demo.
