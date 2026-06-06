@@ -23,6 +23,7 @@ export function useAuth() {
   const [user, setUser] = useState<User | null | undefined>(undefined);
   const [needsHomeSetup, setNeedsHomeSetup] = useState(false);
   const [profileLoaded, setProfileLoaded] = useState(false);
+  const [role, setRole] = useState<string | null>(null);
 
   useEffect(() => {
     let unsubDoc: (() => void) | null = null;
@@ -37,7 +38,9 @@ export function useAuth() {
         await ensureUserDoc(firebaseUser);
         let firstSnap = true;
         unsubDoc = onSnapshot(doc(db, 'users', firebaseUser.uid), snap => {
-          setNeedsHomeSetup(!snap.data()?.homeGeohash);
+          const data = snap.data();
+          setNeedsHomeSetup(!data?.homeGeohash);
+          setRole(data?.role ?? 'resident');
           if (firstSnap) {
             firstSnap = false;
             setProfileLoaded(true);
@@ -45,6 +48,7 @@ export function useAuth() {
         });
       } else {
         setNeedsHomeSetup(false);
+        setRole(null);
         setProfileLoaded(true);
       }
     });
@@ -56,5 +60,5 @@ export function useAuth() {
   }, []);
 
   // loading = true until auth resolves AND first profile snapshot arrives
-  return { user, loading: user === undefined || !profileLoaded, needsHomeSetup };
+  return { user, loading: user === undefined || !profileLoaded, needsHomeSetup, role };
 }

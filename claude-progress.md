@@ -380,3 +380,31 @@ Everything was already correct except the data subscription:
 **Feature status:** `disputed-status` → `in_progress` (pending live deploy + Firestore console test).
 
 **Next best action:** All core features (priorities 1–12) are now implemented. Remaining unstarted features are priorities 20–25 (photo upload, Claude Vision, weather check UI, GeoJSON overlay, driver mode). Recommend running `./init.sh` to confirm clean baseline, then planning which demo-critical features to tackle next.
+
+---
+
+### Session 14 — 2026-06-06 (continued)
+
+**Goal:** Implement `driver-mode` feature (priority 25).
+
+**Completed:**
+
+Three files changed:
+
+1. **`useAuth.ts`** — Added `role` state to the existing `onSnapshot` user doc listener. No new Firestore subscription — just reads `snap.data()?.role` alongside the existing `homeGeohash` read. Returns `role` in the hook's return value.
+
+2. **`DriverReportOverlay.tsx`** (new component):
+   - `StyleSheet.absoluteFill` container with `pointerEvents="box-none"` — map touches pass through when the overlay is closed.
+   - Persistent FAB (`⚠ Report Flood`, red, paddingVertical 18, elevation 8) anchored at bottom center via a `SafeAreaView`.
+   - Tapping the FAB opens a dark semi-transparent bottom-sheet with 4 full-width depth buttons (paddingVertical 22 — big enough for stationary thumb-tap).
+   - Tapping a depth: calls `Location.getCurrentPositionAsync(Balanced)` for a fresh GPS fix (drivers move between reports), then `addDoc` with identical Firestore payload to `ReportSheet`.
+   - Spinner replaces buttons during submit. Fails silently (no `Alert.alert` while driving). FAB turns green `✓ Reported` for 2.5 s, then resets.
+   - Cancel button dismisses the sheet.
+
+3. **`index.tsx`** — Imports `useAuth`, renders `<DriverReportOverlay />` when `role === 'driver'`. No impact on resident users.
+
+**TypeScript:** 0 errors. Two issues caught during compile fixed: `StyleSheet.absoluteFillObject` (doesn't exist in this RN version — replaced with explicit `position:'absolute', top/left/right/bottom:0`) and `pointerEvents` on `TouchableOpacity` (not a valid prop — removed; parent `SafeAreaView` with `pointerEvents="box-none"` already handles this).
+
+**Feature status:** `driver-mode` → `in_progress` (pending live device test with role='driver').
+
+**Demo setup:** In Firestore console, set `users/{uid} → role: 'driver'` for the demo driver account. The FAB appears immediately on next auth state snapshot.

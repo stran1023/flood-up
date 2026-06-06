@@ -284,16 +284,16 @@
       "area": "reporting",
       "title": "Driver mode one-tap report button",
       "user_visible_behavior": "Users with role='driver' see a persistent large Report button always visible on the map screen. One tap auto-fills location, skips photo, and submits with large depth buttons optimised for stationary tapping.",
-      "status": "not_started",
+      "status": "in_progress",
       "verification": [
         "Log in as a driver account (role='driver')",
-        "Map screen shows persistent Report button (not hidden behind tab)",
-        "Tapping → depth picker appears with large tap targets",
-        "Submit completes in one tap flow without photo step",
-        "Resulting Firestore document identical to resident report"
+        "Map screen shows persistent '⚠ Report Flood' FAB at bottom center",
+        "Tapping FAB → dark bottom sheet with 4 large depth buttons appears",
+        "Tapping a depth button → GPS acquired → report submitted → FAB turns green '✓ Reported' for 2.5s",
+        "Resulting Firestore document identical to resident report (same fields)"
       ],
-      "evidence": "",
-      "notes": "Driver mode is the core Grab differentiator for the pitch. Prioritise for demo even if listed at priority 25."
+      "evidence": "useAuth.ts: added role state read from Firestore user doc onSnapshot; exposed in return value. DriverReportOverlay.tsx: persistent FAB (paddingVertical:18) always visible at bottom of map screen; tapping opens a dark bottom-sheet with 4 full-width depth buttons (paddingVertical:22); tapping a depth calls Location.getCurrentPositionAsync (fresh fix — drivers move) then addDoc with identical Firestore payload to ReportSheet; spinner during submit; FAB turns green for 2.5s on success; fails silently (no Alert dialogs while driving); Cancel dismisses sheet. index.tsx: imports useAuth, renders DriverReportOverlay when role==='driver'. TypeScript: 0 errors. Requires role='driver' set in Firestore + live device test.",
+      "notes": "Set role='driver' in Firestore console: users/{uid} → role: 'driver'. Resident tab Report screen still works for drivers as fallback. GPS is fetched fresh on each submit (not cached) since drivers are moving."
     }
   ]
 }
