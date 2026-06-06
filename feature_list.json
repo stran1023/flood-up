@@ -99,7 +99,7 @@
         "TypeScript: 0 errors in mobile/"
       ],
       "evidence": "routeUtils.ts: decodePolyline() (inline Google encoded-polyline decoder, no package); findFloodsOnRoute() (point-to-segment haversine distance via geofire-common, 200m threshold). useRoute.ts: fetches Google Maps Directions API, decodes overview_polyline, calls findFloodsOnRoute; useEffect on reports re-runs findFloodsOnRoute when live reports change while route is active (was stale before this fix). RouteSearch.tsx: floating search bar (position:absolute top); blue/green/red banners; × clear button. RouteOverlay.tsx: blue Polyline (strokeWidth 4) + depth-colored Circle (radius 200m, 25% opacity fill) per flood on route; rendered inside FloodMap MapView. index.tsx: useRoute(reports) wired; RouteSearch and FloodMap both receive route. EXPO_PUBLIC_GOOGLE_DIRECTIONS_API_KEY missing → error banner shown immediately. TypeScript: 0 errors. Requires API key in mobile/.env + live device test.",
-      "notes": "Add EXPO_PUBLIC_GOOGLE_DIRECTIONS_API_KEY=<key> to mobile/.env. Key needs Google Maps Directions API enabled in GCP console. Polyline decoding is inline (no extra package). Flood proximity threshold: 200m from any route segment using point-to-segment projection."
+      "notes": "Add EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=<key> to mobile/.env (same key used for map tiles, Directions API, and Roads API). Enable 'Maps SDK for Android', 'Maps SDK for iOS', 'Directions API', and optionally 'Roads API' in GCP console. Polyline decoding is inline (no extra package). Flood proximity threshold: 200m from any route segment."
     },
     {
       "id": "corroboration",

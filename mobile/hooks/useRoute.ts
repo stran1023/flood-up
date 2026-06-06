@@ -10,7 +10,7 @@ export interface RouteResult {
   durationText: string;
 }
 
-const DIRECTIONS_KEY = process.env.EXPO_PUBLIC_GOOGLE_DIRECTIONS_API_KEY ?? '';
+const DIRECTIONS_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ?? '';
 
 export function useRoute(reports: FloodReport[]) {
   const { location } = useLocation();
@@ -33,7 +33,7 @@ export function useRoute(reports: FloodReport[]) {
       return;
     }
     if (!DIRECTIONS_KEY) {
-      setError('Directions API key not configured (EXPO_PUBLIC_GOOGLE_DIRECTIONS_API_KEY)');
+      setError('Directions API key not configured (EXPO_PUBLIC_GOOGLE_MAPS_API_KEY)');
       return;
     }
     setLoading(true);
