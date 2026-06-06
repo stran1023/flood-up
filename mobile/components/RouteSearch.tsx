@@ -6,45 +6,49 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useLocation } from '../hooks/useLocation';
-import type { RouteResult } from '../hooks/useRoute';
+import type { RouteResult, Destination } from '../hooks/useRoute';
 
-interface Prediction {
-  place_id: string;
-  structured_formatting: { main_text: string; secondary_text: string };
-  description: string;
+interface NominatimResult {
+  place_id: number;
+  display_name: string;
+  lat: string;
+  lon: string;
 }
 
 interface Props {
   route: RouteResult | null;
   loading: boolean;
   error: string | null;
-  onSearch: (destination: string) => void;
+  onSearch: (destination: Destination) => void;
   onClear: () => void;
 }
 
-const API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ?? '';
-
 export function RouteSearch({ route, loading, error, onSearch, onClear }: Props) {
   const [text, setText] = useState('');
-  const [suggestions, setSuggestions] = useState<Prediction[]>([]);
+  const [suggestions, setSuggestions] = useState<NominatimResult[]>([]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { top } = useSafeAreaInsets();
   const { location } = useLocation();
 
   async function fetchSuggestions(input: string) {
-    if (!API_KEY || !input.trim()) { setSuggestions([]); return; }
+    if (!input.trim()) { setSuggestions([]); return; }
     try {
-      const params: Record<string, string> = { input, key: API_KEY, language: 'vi' };
-      if (location) {
-        params.location = `${location.lat},${location.lng}`;
-        params.radius = '50000';
-      }
-      const qs = new URLSearchParams(params).toString();
+      const params = new URLSearchParams({
+        q: input,
+        format: 'json',
+        limit: '5',
+        countrycodes: 'vn',
+        ...(location ? {
+          viewbox: `${location.lng - 0.5},${location.lat + 0.5},${location.lng + 0.5},${location.lat - 0.5}`,
+          bounded: '0',
+        } : {}),
+      });
       const res = await fetch(
-        `https://maps.googleapis.com/maps/api/place/autocomplete/json?${qs}`
+        `https://nominatim.openstreetmap.org/search?${params}`,
+        { headers: { 'User-Agent': 'FloodUp/1.0' } }
       );
-      const json = await res.json() as { predictions: Prediction[] };
-      setSuggestions(json.predictions ?? []);
+      const json = await res.json() as NominatimResult[];
+      setSuggestions(json);
     } catch {
       setSuggestions([]);
     }
@@ -54,13 +58,19 @@ export function RouteSearch({ route, loading, error, onSearch, onClear }: Props)
     setText(value);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (!value.trim()) { setSuggestions([]); return; }
-    debounceRef.current = setTimeout(() => fetchSuggestions(value), 300);
+    debounceRef.current = setTimeout(() => fetchSuggestions(value), 400);
   }
 
-  function selectSuggestion(prediction: Prediction) {
-    setText(prediction.description);
+  function selectSuggestion(item: NominatimResult) {
+    // Split "Street Name, District, City, Country" into main + sub
+    const parts = item.display_name.split(', ');
+    setText(parts[0]);
     setSuggestions([]);
-    onSearch(`place_id:${prediction.place_id}`);
+    onSearch({
+      lat: parseFloat(item.lat),
+      lng: parseFloat(item.lon),
+      label: item.display_name,
+    });
   }
 
   function handleClear() {
@@ -69,24 +79,32 @@ export function RouteSearch({ route, loading, error, onSearch, onClear }: Props)
     onClear();
   }
 
+  function formatSuggestion(displayName: string): { main: string; sub: string } {
+    const parts = displayName.split(', ');
+    return {
+      main: parts[0],
+      sub: parts.slice(1).join(', '),
+    };
+  }
+
   const floodCount = route?.floodsOnRoute.length ?? 0;
   const showBanner = route !== null || error !== null;
 
   return (
     <View style={[styles.container, { top }]} pointerEvents="box-none">
-      {/* Search input */}
+      {/* Search bar */}
       <View style={styles.inputRow} pointerEvents="auto">
-        <MaterialIcons name="directions" size={20} color="#3B82F6" />
+        <MaterialIcons name="search" size={20} color="#3B82F6" />
         <TextInput
           style={styles.input}
-          placeholder="Navigate to..."
+          placeholder="Where to?"
           placeholderTextColor="#aaa"
           value={text}
           onChangeText={handleTextChange}
-          onSubmitEditing={() => {
-            if (text.trim()) { setSuggestions([]); onSearch(text.trim()); }
-          }}
           returnKeyType="search"
+          onSubmitEditing={() => {
+            if (suggestions.length > 0) selectSuggestion(suggestions[0]);
+          }}
         />
         {loading && <ActivityIndicator size="small" color="#3B82F6" />}
         {!loading && (showBanner || text.length > 0) && (
@@ -96,40 +114,35 @@ export function RouteSearch({ route, loading, error, onSearch, onClear }: Props)
         )}
       </View>
 
-      {/* Autocomplete suggestions */}
+      {/* Place suggestions */}
       {suggestions.length > 0 && (
         <FlatList
           style={styles.suggestions}
           data={suggestions}
-          keyExtractor={item => item.place_id}
+          keyExtractor={item => String(item.place_id)}
           keyboardShouldPersistTaps="handled"
-          renderItem={({ item, index }) => (
-            <TouchableOpacity
-              style={[
-                styles.suggestion,
-                index < suggestions.length - 1 && styles.suggestionBorder,
-              ]}
-              onPress={() => selectSuggestion(item)}
-              activeOpacity={0.7}
-            >
-              <MaterialIcons name="place" size={16} color="#E24B4A" style={styles.placeIcon} />
-              <View style={styles.suggestionText}>
-                <Text style={styles.suggestionMain} numberOfLines={1}>
-                  {item.structured_formatting.main_text}
-                </Text>
-                <Text style={styles.suggestionSub} numberOfLines={1}>
-                  {item.structured_formatting.secondary_text}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          )}
+          renderItem={({ item, index }) => {
+            const { main, sub } = formatSuggestion(item.display_name);
+            return (
+              <TouchableOpacity
+                style={[styles.suggestion, index < suggestions.length - 1 && styles.suggestionDivider]}
+                onPress={() => selectSuggestion(item)}
+                activeOpacity={0.7}
+              >
+                <MaterialIcons name="place" size={16} color="#E24B4A" />
+                <View style={styles.suggestionText}>
+                  <Text style={styles.suggestionMain} numberOfLines={1}>{main}</Text>
+                  {sub ? <Text style={styles.suggestionSub} numberOfLines={1}>{sub}</Text> : null}
+                </View>
+              </TouchableOpacity>
+            );
+          }}
         />
       )}
 
-      {/* Result banner */}
+      {/* Route result banner */}
       {route && suggestions.length === 0 && (
-        <View style={[styles.banner, floodCount > 0 ? styles.bannerWarn : styles.bannerOk]}
-          pointerEvents="auto">
+        <View style={[styles.banner, floodCount > 0 ? styles.bannerWarn : styles.bannerOk]} pointerEvents="auto">
           <MaterialIcons
             name={floodCount > 0 ? 'warning' : 'check-circle'}
             size={16}
@@ -137,8 +150,8 @@ export function RouteSearch({ route, loading, error, onSearch, onClear }: Props)
           />
           <Text style={[styles.bannerText, { color: floodCount > 0 ? '#E24B4A' : '#16a34a' }]}>
             {floodCount > 0
-              ? `${floodCount} flood zone${floodCount !== 1 ? 's' : ''} on your route · ${route.durationText} (${route.distanceText})`
-              : `Route looks clear · ${route.durationText} (${route.distanceText})`}
+              ? `${floodCount} flood zone${floodCount !== 1 ? 's' : ''} on route · ${route.durationText} (${route.distanceText})`
+              : `Route clear · ${route.durationText} (${route.distanceText})`}
           </Text>
         </View>
       )}
@@ -157,9 +170,7 @@ export function RouteSearch({ route, loading, error, onSearch, onClear }: Props)
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
+    top: 0, left: 0, right: 0,
     padding: 12,
     gap: 6,
   },
@@ -177,16 +188,11 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     elevation: 4,
   },
-  input: {
-    flex: 1,
-    fontSize: 15,
-    color: '#1a1a1a',
-    padding: 0,
-  },
+  input: { flex: 1, fontSize: 15, color: '#1a1a1a', padding: 0 },
   suggestions: {
     backgroundColor: '#fff',
     borderRadius: 10,
-    maxHeight: 240,
+    maxHeight: 260,
     shadowColor: '#000',
     shadowOpacity: 0.10,
     shadowRadius: 6,
@@ -200,11 +206,10 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     gap: 10,
   },
-  suggestionBorder: {
+  suggestionDivider: {
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#e0e0e0',
   },
-  placeIcon: { marginTop: 1 },
   suggestionText: { flex: 1 },
   suggestionMain: { fontSize: 14, fontWeight: '600', color: '#1a1a1a' },
   suggestionSub:  { fontSize: 12, color: '#888', marginTop: 1 },

@@ -10,7 +10,22 @@ export interface RouteResult {
   durationText: string;
 }
 
-const DIRECTIONS_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ?? '';
+export interface Destination {
+  lat: number;
+  lng: number;
+  label: string;
+}
+
+function formatDistance(m: number): string {
+  return m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(1)} km`;
+}
+
+function formatDuration(s: number): string {
+  const mins = Math.round(s / 60);
+  if (mins < 60) return `${mins} mins`;
+  const h = Math.floor(mins / 60), rem = mins % 60;
+  return rem > 0 ? `${h}h ${rem}m` : `${h}h`;
+}
 
 export function useRoute(reports: FloodReport[]) {
   const { location } = useLocation();
@@ -18,52 +33,39 @@ export function useRoute(reports: FloodReport[]) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Keep flood warnings current as live reports appear or expire.
+  // Re-check floods whenever live reports change while a route is active.
   useEffect(() => {
-    setRoute(current =>
-      current
-        ? { ...current, floodsOnRoute: findFloodsOnRoute(current.polylinePoints, reports) }
-        : null
+    setRoute(cur =>
+      cur ? { ...cur, floodsOnRoute: findFloodsOnRoute(cur.polylinePoints, reports) } : null
     );
   }, [reports]);
 
-  async function fetchRoute(destination: string) {
-    if (!location) {
-      setError('Location not available yet — try again in a moment');
-      return;
-    }
-    if (!DIRECTIONS_KEY) {
-      setError('Directions API key not configured (EXPO_PUBLIC_GOOGLE_MAPS_API_KEY)');
-      return;
-    }
+  async function fetchRoute(destination: Destination) {
+    if (!location) { setError('Location not available yet — try again in a moment'); return; }
     setLoading(true);
     setError(null);
     try {
-      const origin = `${location.lat},${location.lng}`;
+      // OSRM public API — free, no key, OpenStreetMap data. Coords are lng,lat order.
       const url =
-        `https://maps.googleapis.com/maps/api/directions/json` +
-        `?origin=${encodeURIComponent(origin)}` +
-        `&destination=${encodeURIComponent(destination)}` +
-        `&key=${DIRECTIONS_KEY}`;
-      const res = await fetch(url);
+        `https://router.project-osrm.org/route/v1/driving/` +
+        `${location.lng},${location.lat};${destination.lng},${destination.lat}` +
+        `?overview=full&geometries=polyline`;
+      const res = await fetch(url, { headers: { 'User-Agent': 'FloodUp/1.0' } });
       const json = await res.json() as {
-        status: string;
-        routes: Array<{
-          overview_polyline: { points: string };
-          legs: Array<{ distance: { text: string }; duration: { text: string } }>;
-        }>;
+        code: string;
+        routes: Array<{ geometry: string; legs: Array<{ distance: number; duration: number }> }>;
       };
-      if (json.status !== 'OK') {
-        setError(json.status === 'ZERO_RESULTS' ? 'No route found to that destination' : 'Could not get directions');
+      if (json.code !== 'Ok' || !json.routes?.length) {
+        setError('No route found to that destination');
         return;
       }
       const leg = json.routes[0].legs[0];
-      const polylinePoints = decodePolyline(json.routes[0].overview_polyline.points);
+      const polylinePoints = decodePolyline(json.routes[0].geometry);
       setRoute({
         polylinePoints,
         floodsOnRoute: findFloodsOnRoute(polylinePoints, reports),
-        distanceText: leg.distance.text,
-        durationText: leg.duration.text,
+        distanceText: formatDistance(leg.distance),
+        durationText: formatDuration(leg.duration),
       });
     } catch {
       setError('Network error — check your connection');
@@ -72,10 +74,7 @@ export function useRoute(reports: FloodReport[]) {
     }
   }
 
-  function clearRoute() {
-    setRoute(null);
-    setError(null);
-  }
+  function clearRoute() { setRoute(null); setError(null); }
 
   return { route, loading, error, fetchRoute, clearRoute };
 }
