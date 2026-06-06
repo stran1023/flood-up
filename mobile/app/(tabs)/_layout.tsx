@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { ColorValue } from 'react-native';
 
 type IconName = React.ComponentProps<typeof MaterialIcons>['name'];
@@ -9,6 +10,8 @@ function TabIcon({ name, color }: { name: IconName; color: ColorValue }) {
 }
 
 export default function TabLayout() {
+  const insets = useSafeAreaInsets();
+
   return (
     <Tabs
       screenOptions={{
@@ -16,8 +19,15 @@ export default function TabLayout() {
         tabBarActiveTintColor: '#E24B4A',
         tabBarInactiveTintColor: '#999',
         tabBarStyle: {
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: 56 + insets.bottom,
+          paddingBottom: insets.bottom,
           borderTopWidth: 0.5,
           borderTopColor: '#e0e0e0',
+          backgroundColor: '#fff',
         },
         headerStyle: { backgroundColor: '#fff' },
         headerTitleStyle: { fontWeight: '700' },
