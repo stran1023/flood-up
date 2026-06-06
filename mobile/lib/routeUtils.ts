@@ -46,6 +46,40 @@ function distToSegmentKm(p: LatLng, a: LatLng, b: LatLng): number {
   return distanceBetween([p.latitude, p.longitude], closest);
 }
 
+function isPointNearFlood(point: LatLng, reports: FloodReport[], thresholdKm: number): boolean {
+  return reports.some(r =>
+    distanceBetween([point.latitude, point.longitude], [r.lat, r.lng]) <= thresholdKm
+  );
+}
+
+// Splits a polyline into consecutive clear/flooded segments for colour rendering.
+export function splitRouteByFloodZones(
+  points: LatLng[],
+  floods: FloodReport[],
+  thresholdKm = 0.2,
+): Array<{ points: LatLng[]; flooded: boolean }> {
+  if (points.length === 0) return [];
+  if (floods.length === 0) return [{ points, flooded: false }];
+
+  const segments: Array<{ points: LatLng[]; flooded: boolean }> = [];
+  let current: LatLng[] = [points[0]];
+  let flooded = isPointNearFlood(points[0], floods, thresholdKm);
+
+  for (let i = 1; i < points.length; i++) {
+    const f = isPointNearFlood(points[i], floods, thresholdKm);
+    if (f !== flooded) {
+      current.push(points[i]); // overlap point keeps segments connected
+      segments.push({ points: current, flooded });
+      current = [points[i]];
+      flooded = f;
+    } else {
+      current.push(points[i]);
+    }
+  }
+  segments.push({ points: current, flooded });
+  return segments;
+}
+
 export function findFloodsOnRoute(
   polyline: LatLng[],
   reports: FloodReport[],
