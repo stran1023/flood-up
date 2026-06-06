@@ -1,3 +1,4 @@
+import { useRef, useEffect } from 'react';
 import { StyleSheet } from 'react-native';
 import MapView from 'react-native-maps';
 import { FloodPin } from './FloodPin';
@@ -17,11 +18,23 @@ interface Props {
   reports: FloodReport[];
   route?: RouteResult | null;
   onPinPress?: (report: FloodReport) => void;
+  centerOn?: { lat: number; lng: number };
 }
 
-export function FloodMap({ reports, route, onPinPress }: Props) {
+export function FloodMap({ reports, route, onPinPress, centerOn }: Props) {
+  const mapRef = useRef<MapView>(null);
+
+  useEffect(() => {
+    if (!centerOn) return;
+    mapRef.current?.animateToRegion(
+      { latitude: centerOn.lat, longitude: centerOn.lng, latitudeDelta: 0.01, longitudeDelta: 0.01 },
+      800
+    );
+  }, [centerOn]);
+
   return (
     <MapView
+      ref={mapRef}
       style={styles.map}
       initialRegion={HCMC_REGION}
       showsUserLocation

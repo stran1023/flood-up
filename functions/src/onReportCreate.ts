@@ -19,6 +19,17 @@ async function snapToRoad(lat: number, lng: number): Promise<boolean> {
   }
 }
 
+async function reverseGeocode(lat: number, lng: number): Promise<string | undefined> {
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`;
+    const res = await fetch(url, { headers: { 'User-Agent': 'FloodUp/1.0' } });
+    const json = (await res.json()) as { address?: { road?: string; suburb?: string; city?: string } };
+    return json.address?.road ?? json.address?.suburb ?? json.address?.city;
+  } catch {
+    return undefined; // fail open — notification still sent without street name
+  }
+}
+
 export const onReportCreate = onDocumentCreated(
   { document: 'reports/{reportId}', region: 'asia-southeast1' },
   async event => {
@@ -28,13 +39,15 @@ export const onReportCreate = onDocumentCreated(
     const reportId = event.params.reportId;
     const data = snapshot.data() as Omit<FloodReport, 'id'>;
     const { lat, lng, depth, userId, photoUrl } = data;
+    const reportedAt = data.reportedAt.toDate().toISOString();
 
     const now = Date.now();
 
-    const [onRoad, rainfall, lastReport] = await Promise.all([
+    const [onRoad, rainfall, lastReport, street] = await Promise.all([
       snapToRoad(lat, lng),
       getOpenMeteoRainfall(lat, lng),
       getLastReport(userId, reportId),
+      reverseGeocode(lat, lng),
     ]);
 
     let trustScore = 70;
@@ -91,12 +104,12 @@ export const onReportCreate = onDocumentCreated(
 
     // Severity fast-path — preliminary alert for serious single reports
     if (['waist', 'chest'].includes(depth) && trustScore >= 65) {
-      await sendNearbyNotifications(reportId, lat, lng, depth as Depth, { preliminary: true });
+      await sendNearbyNotifications(reportId, lat, lng, depth as Depth, { preliminary: true, street, reportedAt });
     }
 
     // Standard FCM when cluster is confirmed
     if (isConfirmed) {
-      await sendNearbyNotifications(reportId, lat, lng, depth as Depth, { preliminary: false });
+      await sendNearbyNotifications(reportId, lat, lng, depth as Depth, { preliminary: false, street, reportedAt });
     }
 
     // Image check — fire and forget, non-blocking

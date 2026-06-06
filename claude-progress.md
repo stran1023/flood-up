@@ -278,3 +278,32 @@
 - Submit chest-depth report as test user on-road in rainy conditions → check CF logs → second device receives notification
 
 **Next best action:** Implement `push-notifications` feature (priority 9) — shares the same `sendNearbyNotifications` infrastructure; needs to verify confirmed-report trigger path and `getUsersNearby` query coverage.
+
+---
+
+### Session 10 — 2026-06-06 (continued)
+
+**Goal:** Implement `push-notifications` feature (priority 9).
+
+**Completed:**
+
+The Expo Push API delivery path already existed from the severity-fastpath session. Four missing pieces implemented:
+
+1. **Street name in notification body** — added `reverseGeocode(lat, lng)` using OSM Nominatim (free, no API key, requires `User-Agent` header). Runs in parallel with `snapToRoad`/`rainfall`/`lastReport` in the same `Promise.all` so it adds zero latency to the pipeline. Fails open: if geocoding errors, `street = undefined` and body falls back to "in your area".
+
+2. **Full notification data payload** — `sendNearbyNotifications` now accepts `{ preliminary, street?, reportedAt }` and includes `{ reportId, depth, reportedAt, street, lat, lng, preliminary }` in the Expo data field. Satisfies the "payload contains street, depth, reportedAt, reportId" verification step.
+
+3. **Map centers on tapped notification** — `FloodMap.tsx` now accepts a `centerOn: { lat, lng }` prop; uses a `MapView` ref with `animateToRegion` (800ms animation, delta 0.01). `index.tsx` reads `focusLat`/`focusLng` from URL params (passed by `_layout.tsx`) and converts to `centerOn`. `_layout.tsx` notification tap handler extracts lat/lng from notification data and navigates to `/(tabs)/` with focus params before pushing the alert modal.
+
+4. **Notification body** — now reads `Knee-deep flooding on Nguyen Hue` when geocoding succeeds, vs `Knee-deep flooding reported in your area` as fallback.
+
+**Verification run:** `npx tsc --noEmit` in `functions/` → 0 errors. `npx tsc --noEmit` in `mobile/` → 0 errors.
+
+**Feature status:** `push-notifications` → `in_progress` (pending live 3-report + 2-device test).
+
+**What is NOT done (requires live deploy):**
+- EAS projectId in `eas.json` (for Expo push token registration)
+- `firebase deploy --only functions`
+- 2-device test: submit 3 reports → confirmed notification arrives on second device → tap centers map on report
+
+**Next best action:** Implement `auto-expiry` feature (priority 10) — `expireReports` scheduled Cloud Function is already scaffolded in `functions/src/expireReports.ts`; verify the 30-min schedule, expiry query, and client-side map behavior.

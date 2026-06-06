@@ -31,13 +31,17 @@ export async function sendNearbyNotifications(
   lat: number,
   lng: number,
   depth: Depth,
-  options: { preliminary: boolean }
+  options: { preliminary: boolean; street?: string; reportedAt: string }
 ): Promise<void> {
   const users = await getUsersNearby([lat, lng], 2);
   if (users.length === 0) return;
 
-  const title = options.preliminary ? 'Unverified flood report nearby' : 'Flood confirmed nearby';
-  const body = `${depth.charAt(0).toUpperCase() + depth.slice(1)}-deep flooding reported in your area`;
+  const { preliminary, street, reportedAt } = options;
+  const title = preliminary ? 'Unverified flood report nearby' : 'Flood confirmed nearby';
+  const depthLabel = depth.charAt(0).toUpperCase() + depth.slice(1);
+  const body = street
+    ? `${depthLabel}-deep flooding on ${street}`
+    : `${depthLabel}-deep flooding reported in your area`;
 
   await Promise.all(
     users.map(async user => {
@@ -46,7 +50,15 @@ export async function sendNearbyNotifications(
 
       const messages: ExpoMessage[] = tokens.map(to => ({
         to, title, body, sound: 'default',
-        data: { reportId, depth, preliminary: String(options.preliminary) },
+        data: {
+          reportId,
+          depth,
+          reportedAt,
+          street: street ?? '',
+          lat: String(lat),
+          lng: String(lng),
+          preliminary: String(preliminary),
+        },
       }));
 
       const tickets = await sendExpo(messages);

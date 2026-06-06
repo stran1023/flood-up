@@ -139,7 +139,7 @@
       "area": "notifications",
       "title": "FCM push notifications on confirmed reports",
       "user_visible_behavior": "When a report reaches confirmed status, all users with homeGeohash within 2km receive an FCM push notification. Tapping the notification opens the map centered on the report.",
-      "status": "not_started",
+      "status": "in_progress",
       "verification": [
         "Set homeGeohash on test user within 2km of test report location",
         "Trigger confirmation (3 corroborating reports)",
@@ -148,8 +148,8 @@
         "Tap notification → app opens and map centers on the confirmed report",
         "Test user outside 2km does NOT receive notification"
       ],
-      "evidence": "",
-      "notes": "Query users by homeGeohash range using geohashQueryBounds. Send to all fcmTokens arrays (multi-token support). Handle stale tokens gracefully (FCM returns UNREGISTERED error — remove that token from the array)."
+      "evidence": "onReportCreate.ts: reverseGeocode() runs in parallel with snapToRoad/rainfall/lastReport using Nominatim free API (no key, User-Agent header, fail open → undefined). street + reportedAt passed to sendNearbyNotifications. notifyNearby.ts: body uses street when available ('Knee-deep flooding on Nguyen Hue' vs fallback 'in your area'); data payload includes {reportId, depth, reportedAt, street, lat, lng, preliminary}. FloodMap.tsx: MapView ref + animateToRegion(lat,lng,delta=0.01) when centerOn prop changes. index.tsx: reads focusLat/focusLng from useLocalSearchParams, passes as centerOn to FloodMap. _layout.tsx: notification tap extracts lat/lng from data, navigates to /(tabs)/ with focusLat/focusLng params then pushes /alert. TypeScript: 0 errors. Requires EAS projectId + live 3-report test + 2-device test to move to passing.",
+      "notes": "Expo Push API (not Firebase Admin SDK messaging). Street name via Nominatim reverse geocoding — fails open (notification still sent without street). getUsersNearby uses homeGeohash geohash bounds + haversine filter at exactly 2km."
     },
     {
       "id": "auto-expiry",

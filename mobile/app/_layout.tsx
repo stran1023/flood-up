@@ -65,8 +65,17 @@ function RootLayoutNav() {
 
   // Navigate to alert screen when user taps a push notification
   useEffect(() => {
-    const reportId = lastResponse?.notification?.request?.content?.data?.reportId as string | undefined;
+    const data = lastResponse?.notification?.request?.content?.data as Record<string, string> | undefined;
+    const reportId = data?.reportId;
     if (!reportId || !user) return;
+
+    // Pre-center the map tab on the report location before opening the alert modal
+    const lat = data?.lat;
+    const lng = data?.lng;
+    if (lat && lng) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      router.navigate({ pathname: '/(tabs)/', params: { focusLat: lat, focusLng: lng } } as any);
+    }
     router.push({ pathname: '/alert', params: { reportId } });
   }, [lastResponse, user, router]);
 
