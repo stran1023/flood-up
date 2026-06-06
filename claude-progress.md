@@ -6,7 +6,7 @@
 |---|---|
 | Repository root | `D:\flood-up` (Windows) / `/d/flood-up` (Git Bash) |
 | Standard startup | `./init.sh` |
-| Standard verification | `npx tsc --noEmit` in each of `mobile/`, `functions/`, `dashboard/` |
+| Standard verification | `npx tsc --noEmit` in each of `mobile/`, `functions/` |
 | Highest-priority unfinished feature | `home-location` (priority 3) |
 | Current blocker | None — Firebase credentials connected, auth implemented |
 | Last verified baseline | `init.sh` passes clean — all three packages install and compile |

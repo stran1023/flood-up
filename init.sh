@@ -20,9 +20,6 @@ echo "==> Installing mobile dependencies..."
 echo "==> Installing functions dependencies..."
 (cd functions && $INSTALL_CMD)
 
-echo "==> Installing dashboard dependencies..."
-(cd dashboard && $INSTALL_CMD)
-
 echo ""
 
 # ── Verify TypeScript in all packages ─────────────────────────────────────────
@@ -33,14 +30,10 @@ echo "==> Verifying mobile/..."
 echo "==> Verifying functions/..."
 (cd functions && $VERIFY_CMD)
 
-echo "==> Verifying dashboard/..."
-(cd dashboard && $VERIFY_CMD)
-
 echo ""
 echo "✓ Baseline OK — all packages install and compile cleanly."
 echo ""
 echo "Start command:  cd mobile && $START_CMD"
-echo "Dashboard:      cd dashboard && npx vite"
 echo "Functions:      cd functions && npm run serve"
 echo ""
 

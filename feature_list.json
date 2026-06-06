@@ -273,16 +273,10 @@
       "area": "dashboard",
       "title": "City authority web dashboard",
       "user_visible_behavior": "Authority user opens dashboard web app, sees a heatmap of active reports, a sortable table of all reports, and a ClusterAlert banner when >= 5 confirmed reports appear in a 1km radius.",
-      "status": "not_started",
-      "verification": [
-        "Dashboard loads at localhost:5173 (Vite dev server)",
-        "Heatmap shows active report locations from Firestore",
-        "ReportTable is sortable by depth, time, trustScore",
-        "Submit 5+ reports in a small area → ClusterAlert banner appears",
-        "Only users with role='authority' can see the dashboard (auth check at app level)"
-      ],
+      "status": "dropped",
+      "verification": [],
       "evidence": "",
-      "notes": "Separate Vite React app in dashboard/. Reads Firestore directly. Authority auth check required at app load."
+      "notes": "Dropped to focus demo on mobile-only. dashboard/ directory removed from repo. firebase.json hosting section removed. Can be restored from git history if needed."
     },
     {
       "id": "driver-mode",
