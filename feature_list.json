@@ -209,7 +209,7 @@
       "area": "reporting",
       "title": "Optional photo attachment on report",
       "user_visible_behavior": "After selecting depth, user can optionally add a photo (camera or gallery). Photo uploads to Firebase Storage. photoUrl is stored on the report document.",
-      "status": "in_progress",
+      "status": "dropped",
       "verification": [
         "Tap 'Add photo' in ReportSheet → Alert with Camera / Photo Library / Cancel",
         "Select a photo → 180px thumbnail previews in the form with 'Remove photo' link",
@@ -225,7 +225,7 @@
       "area": "verification",
       "title": "Claude Vision image verification badge",
       "user_visible_behavior": "Reports with photos show a verification badge: green checkmark (YES), red X (NO), or grey question mark (UNCERTAIN/null). Badge updates asynchronously after Claude Vision responds.",
-      "status": "in_progress",
+      "status": "dropped",
       "verification": [
         "Submit a report with a clear flood photo → photoVerified becomes true within ~10s",
         "Submit a report with a non-flood photo (e.g. clear road) → photoVerified becomes false",

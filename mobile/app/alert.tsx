@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { doc, onSnapshot, updateDoc, increment, type Timestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
@@ -58,13 +58,6 @@ export default function AlertScreen() {
         <Text style={styles.depthLabel}>{config.label}</Text>
       </View>
 
-      {report.photoUrl && (
-        <View style={styles.photoContainer}>
-          <Image source={{ uri: report.photoUrl }} style={styles.photo} resizeMode="cover" />
-          <VerificationBadge photoVerified={report.photoVerified} />
-        </View>
-      )}
-
       <View style={styles.meta}>
         <MetaRow label="Reported"   value={timeAgo(report.reportedAt)} />
         <MetaRow label="Status"     value={report.status} />
@@ -90,21 +83,6 @@ export default function AlertScreen() {
           <Text style={styles.voteText}>Looks clear  {report.downvotes}</Text>
         </TouchableOpacity>
       </View>
-    </View>
-  );
-}
-
-function VerificationBadge({ photoVerified }: { photoVerified?: boolean | null }) {
-  let icon: string, label: string, color: string;
-  if (photoVerified === true)       { icon = '✓'; label = 'Flood confirmed'; color = '#4CAF50'; }
-  else if (photoVerified === false)  { icon = '✗'; label = 'Not a flood';    color = '#E24B4A'; }
-  else if (photoVerified === null)   { icon = '?'; label = 'Uncertain';       color = '#9E9E9E'; }
-  else                               { icon = '⏳'; label = 'Checking photo…'; color = '#9E9E9E'; }
-
-  return (
-    <View style={[styles.badge, { backgroundColor: color }]}>
-      <Text style={styles.badgeIcon}>{icon}</Text>
-      <Text style={styles.badgeLabel}>{label}</Text>
     </View>
   );
 }
@@ -146,19 +124,4 @@ const styles = StyleSheet.create({
   voteUp:   { backgroundColor: '#4CAF50' },
   voteDown: { backgroundColor: '#9E9E9E' },
   voteText: { color: '#fff', fontWeight: '700', fontSize: 14 },
-  photoContainer: { position: 'relative' },
-  photo: { width: '100%', height: 180, borderRadius: 12 },
-  badge: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 20,
-  },
-  badgeIcon:  { color: '#fff', fontSize: 13, fontWeight: '700' },
-  badgeLabel: { color: '#fff', fontSize: 12, fontWeight: '600' },
 });

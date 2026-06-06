@@ -7,7 +7,6 @@
     "expo": "^56.0.9",
     "expo-constants": "~56.0.16",
     "expo-font": "~56.0.5",
-    "expo-image-picker": "~56.0.16",
     "expo-linking": "~56.0.13",
     "expo-location": "~56.0.16",
     "expo-notifications": "~56.0.16",

@@ -3,7 +3,6 @@ import { db, FieldValue } from './admin';
 import { encodeGeohash, getNearbyReports, getLastReport, haversineKm } from './geo';
 import { getOpenMeteoRainfall } from './weatherCheck';
 import { sendNearbyNotifications } from './notifyNearby';
-import { verifyImage } from './verifyImage';
 import type { Depth, FloodReport } from './types';
 
 async function snapToRoad(lat: number, lng: number): Promise<boolean> {
@@ -38,7 +37,7 @@ export const onReportCreate = onDocumentCreated(
 
     const reportId = event.params.reportId;
     const data = snapshot.data() as Omit<FloodReport, 'id'>;
-    const { lat, lng, depth, userId, photoUrl } = data;
+    const { lat, lng, depth, userId } = data;
     const reportedAt = data.reportedAt.toDate().toISOString();
 
     const now = Date.now();
@@ -112,11 +111,5 @@ export const onReportCreate = onDocumentCreated(
       await sendNearbyNotifications(reportId, lat, lng, depth as Depth, { preliminary: false, street, reportedAt });
     }
 
-    // Image check — fire and forget, non-blocking
-    if (photoUrl) {
-      verifyImage(photoUrl, reportId).catch(err =>
-        console.error('verifyImage async error:', err)
-      );
-    }
   }
 );
