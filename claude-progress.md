@@ -220,3 +220,30 @@
 - Manually set expiresAt to now in Firestore console → confirm pin disappears
 
 **Next best action:** Implement `corroboration` feature (priority 7) — Cloud Function logic already scaffolded in `functions/src/onReportCreate.ts`; need to verify the 3-report threshold and status transition.
+
+---
+
+### Session 8 — 2026-06-06 (continued)
+
+**Goal:** Implement and verify `corroboration` feature (priority 7).
+
+**Findings — implementation was already fully scaffolded:**
+
+- `functions/src/onReportCreate.ts` (lines 61–88): calls `getNearbyReports([lat,lng], 0.5, 30, reportId)`, sets `corroborationCount = nearby.length + 1`, `isConfirmed = count >= 3`, batch-writes `status='confirmed'` + new count to current report and `FieldValue.increment(1)` + optional `status='confirmed'` to each neighbor. Logic trace verified correct for 3-report cluster (A=3,B=3,C=3 after third submission).
+- `functions/src/geo.ts` — `getNearbyReports`: geohash bounds (GeoFire pattern), `status in ['pending','confirmed']` server-side, then client-side filters for `expiresAt`, `reportedAt` within 30 min, and haversine distance ≤ 0.5 km.
+- `mobile/components/FloodPin.tsx`: `isConfirmed = report.status === 'confirmed'` → full opacity; pending → `opacity: 0.65`.
+- `mobile/app/alert.tsx`: shows `corroborationCount` as "N nearby" in pin detail.
+
+**One fix applied:** Removed `expiresAt > Timestamp.now()` from the Firestore server-side query in `getNearbyReports`. The original code combined a `geohash` range filter with an `expiresAt` range filter in the same query — a multi-field inequality that can cause Firestore index errors. Moved `expiresAt` check client-side alongside the `reportedAt` and `distanceBetween` filters (standard GeoFire pattern). Also removed the now-unused `Timestamp` import.
+
+**Verification run:** `npx tsc --noEmit` in `functions/` → 0 errors. `npx tsc --noEmit` in `mobile/` → 0 errors.
+
+**Feature status:** `corroboration` → `in_progress` (pending live Firebase test).
+
+**What is NOT done (requires live Firebase + 3 test accounts):**
+- Deploy `onReportCreate` Cloud Function (`firebase deploy --only functions`)
+- Submit 3 reports from 3 accounts within 500m (can use Firestore emulator with simulated coordinates)
+- Verify Firestore: third report → all 3 docs get `status='confirmed'`, `corroborationCount=3`
+- Verify mobile: confirmed pins appear at full opacity, pending at 65%
+
+**Next best action:** Implement `severity-fastpath` feature (priority 8) — logic is scaffolded in `onReportCreate.ts` lines 93–95; needs trustScore threshold review and demo-condition check (base 60 − weather 15 = 45, below the 65 threshold in dry weather).

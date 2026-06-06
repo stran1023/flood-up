@@ -106,15 +106,15 @@
       "area": "reporting",
       "title": "Corroboration counter and confirmed status",
       "user_visible_behavior": "When 3 independent reports arrive within 500m and 30 minutes of each other, the earliest report's status changes to 'confirmed' and its pin changes appearance (e.g. solid fill vs outline). `corroborationCount` on each report reflects self-inclusive count.",
-      "status": "not_started",
+      "status": "in_progress",
       "verification": [
         "Submit 3 reports from 3 different user accounts within 500m (use simulated coordinates if needed)",
         "Check Firestore — third report triggers status='confirmed' on the cluster",
         "Verify corroborationCount = nearby.length + 1 on each report doc",
         "Confirm confirmed pin has distinct visual state on map"
       ],
-      "evidence": "",
-      "notes": "corroborationCount is self-inclusive (own report + nearby). Threshold is >= 3. onReportCreate must query within 500m radius and 30-minute window."
+      "evidence": "onReportCreate.ts: getNearbyReports([lat,lng], 0.5, 30, reportId) → corroborationCount=nearby.length+1 → isConfirmed=count>=3 → batch writes status='confirmed' + corroborationCount to current report and FieldValue.increment(1)+status='confirmed' (if not already) to each neighbor. geo.ts: getNearbyReports uses geohash bounds query (GeoFire standard pattern) with status in ['pending','confirmed'] server-side, then client-side filters expiresAt>now + reportedAt within 30min + haversine<=0.5km. FloodPin.tsx: isConfirmed=status==='confirmed' → full opacity; pending → opacity:0.65. alert.tsx: shows corroborationCount as 'N nearby'. TypeScript: 0 errors in functions/ and mobile/. Requires live Firebase deploy + 3-report test to move to passing.",
+      "notes": "corroborationCount is self-inclusive (own report + nearby). Threshold is >= 3. expiresAt filter is applied client-side (not server-side) to avoid a Firestore multi-inequality-field restriction with the geohash range query."
     },
     {
       "id": "severity-fastpath",

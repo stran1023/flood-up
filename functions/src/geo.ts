@@ -1,5 +1,4 @@
 import { geohashForLocation, geohashQueryBounds, distanceBetween } from 'geofire-common';
-import { Timestamp } from 'firebase-admin/firestore';
 import { db } from './admin';
 import type { FloodReport } from './types';
 
@@ -21,7 +20,8 @@ export async function getNearbyReports(
   excludeId?: string
 ): Promise<FloodReport[]> {
   const bounds = geohashQueryBounds(center, radiusKm * 1000);
-  const sinceMs = Date.now() - withinMinutes * 60 * 1000;
+  const nowMs = Date.now();
+  const sinceMs = nowMs - withinMinutes * 60 * 1000;
 
   const snapshots = await Promise.all(
     bounds.map(([start, end]) =>
@@ -29,7 +29,6 @@ export async function getNearbyReports(
         .where('geohash', '>=', start)
         .where('geohash', '<=', end)
         .where('status', 'in', ['pending', 'confirmed'])
-        .where('expiresAt', '>', Timestamp.now())
         .get()
     )
   );
@@ -39,6 +38,7 @@ export async function getNearbyReports(
     .filter(d => d.id !== excludeId)
     .map(d => ({ id: d.id, ...(d.data() as Omit<FloodReport, 'id'>) }))
     .filter(r =>
+      r.expiresAt.toMillis() > nowMs &&
       r.reportedAt.toMillis() >= sinceMs &&
       distanceBetween([r.lat, r.lng], center) <= radiusKm
     );
