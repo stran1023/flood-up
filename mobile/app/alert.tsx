@@ -71,6 +71,15 @@ export default function AlertScreen() {
         <MetaRow label="Reports"    value={`${report.corroborationCount} nearby`} />
         <MetaRow label="Trust"      value={`${report.trustScore} / 100`} />
         <MetaRow label="Location"   value={`${report.lat.toFixed(5)}, ${report.lng.toFixed(5)}`} />
+        {report.weatherRainfallMm !== undefined && (
+          <MetaRow
+            label="Rainfall"
+            value={report.weatherRainfallMm < 1
+              ? `${report.weatherRainfallMm.toFixed(1)} mm — dry conditions`
+              : `${report.weatherRainfallMm.toFixed(1)} mm`}
+            warning={report.weatherRainfallMm < 1}
+          />
+        )}
       </View>
 
       <View style={styles.voteRow}>
@@ -100,11 +109,11 @@ function VerificationBadge({ photoVerified }: { photoVerified?: boolean | null }
   );
 }
 
-function MetaRow({ label, value }: { label: string; value: string | number }) {
+function MetaRow({ label, value, warning }: { label: string; value: string | number; warning?: boolean }) {
   return (
     <View style={styles.metaRow}>
       <Text style={styles.metaLabel}>{label}</Text>
-      <Text style={styles.metaValue}>{value}</Text>
+      <Text style={[styles.metaValue, warning && styles.metaValueWarning]}>{value}</Text>
     </View>
   );
 }
@@ -131,6 +140,7 @@ const styles = StyleSheet.create({
   },
   metaLabel: { fontSize: 14, color: '#888' },
   metaValue: { fontSize: 14, fontWeight: '600', color: '#1a1a1a', textTransform: 'capitalize' },
+  metaValueWarning: { color: '#E67E00' },
   voteRow: { flexDirection: 'row', gap: 12 },
   voteButton: { flex: 1, paddingVertical: 16, borderRadius: 12, alignItems: 'center' },
   voteUp:   { backgroundColor: '#4CAF50' },

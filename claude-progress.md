@@ -458,3 +458,23 @@ Three files changed:
 1. `functions/.env`: `ANTHROPIC_API_KEY=sk-ant-...`
 2. `firebase deploy --only functions,storage`
 3. Submit report with clear flood photo → watch `photoVerified` field appear in Firestore console
+
+---
+
+### Session 17 — 2026-06-06 (continued)
+
+**Goal:** Implement `weather-check` feature (priority 22).
+
+**Findings — Cloud Function complete; only UI row missing.**
+
+`weatherCheck.ts` → `getOpenMeteoRainfall` already runs in the `Promise.all` in `onReportCreate`. `rainfall < 1.0` already deducts 15 from `trustScore`. `weatherRainfallMm: rainfall` already written in the batch commit. Nothing to change on the Cloud Function side.
+
+**One file changed — `alert.tsx`:**
+- Added `warning?: boolean` prop to `MetaRow`; when true, value text renders in orange (`#E67E00`).
+- Added a `Rainfall` row below Location: renders only when `weatherRainfallMm !== undefined` (i.e., after CF runs; `onSnapshot` delivers it automatically). Value is `"X.X mm — dry conditions"` (orange) when `< 1`, or `"X.X mm"` (normal) when `>= 1`.
+
+**Verification note:** The original spec says dry penalty → trustScore 45, but the base was raised to 70 in the severity-fastpath session, so the correct expected value is 55. Updated in `feature_list.json`.
+
+**Verification run:** `npx tsc --noEmit` in `mobile/` → 0 errors.
+
+**Feature status:** `weather-check` → `in_progress` (pending live device test + CF deploy).

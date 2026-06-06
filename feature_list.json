@@ -241,15 +241,15 @@
       "area": "verification",
       "title": "Open-Meteo weather plausibility flag",
       "user_visible_behavior": "Reports submitted during dry weather (rainfall < 1mm) have their trustScore reduced by 15. The report's weatherRainfallMm field is populated. UI shows a weather flag if rainfall was low.",
-      "status": "not_started",
+      "status": "in_progress",
       "verification": [
-        "Submit a report; check Firestore — weatherRainfallMm field populated",
-        "Simulate a dry-weather submission (mock Open-Meteo to return 0mm) → trustScore = 60 - 15 = 45",
-        "Simulate a rainy submission (mock 5mm) → trustScore stays at 60",
-        "UI pin or detail shows weather flag icon when weatherRainfallMm < 1"
+        "Submit a report; check Firestore — weatherRainfallMm field populated (set in onReportCreate batch)",
+        "Dry submission → trustScore = 70 - 15 = 55 (base raised to 70 in severity-fastpath session)",
+        "Rainy submission (>=1mm) → trustScore stays at 70",
+        "Open report detail → Rainfall row visible after CF runs; orange 'X.X mm — dry conditions' when <1mm, plain 'X.X mm' otherwise"
       ],
-      "evidence": "",
-      "notes": "Open-Meteo is free, no API key. Endpoint: https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lng}&hourly=precipitation. Runs in parallel with GPS and lastReport lookups."
+      "evidence": "weatherCheck.ts: getOpenMeteoRainfall runs in parallel Promise.all in onReportCreate. rainfall<1.0 → trustScore-=15; weatherRainfallMm:rainfall written to batch. alert.tsx: MetaRow now accepts warning?:boolean; Rainfall row rendered when weatherRainfallMm!==undefined; value shows 'X.X mm — dry conditions' in orange (#E67E00) when <1, plain grey when >=1; row absent until CF completes (onSnapshot delivers it). TypeScript: 0 errors. Verification step 2 corrected: base is now 70 not 60.",
+      "notes": "Note for verification: base trustScore is 70 (changed in severity-fastpath session), so dry penalty gives 55 not 45 as originally written. Open-Meteo is ~1km resolution — hyperlocal flash floods may read dry at grid level."
     },
     {
       "id": "geojson-overlay",
