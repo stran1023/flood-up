@@ -197,3 +197,26 @@
 - Deploy `onReportCreate` Cloud Function (`firebase deploy --only functions`) and check logs
 
 **Next best action:** Implement `live-map` feature (priority 5) — real-time Firestore listener already exists in `useReports`, but map needs pin detail sheet, depth-color verification on device, and real-time update test.
+
+---
+
+### Session 7 — 2026-06-06 (continued)
+
+**Goal:** Implement `live-map` feature (priority 5).
+
+**Completed:**
+
+- `mobile/hooks/useReports.ts` — added client-side `expiresAt.toMillis() > now` filter inside the `onSnapshot` callback. The Firestore query uses a static `Timestamp.now()` evaluated at subscription time; without this guard, a report manually expired mid-session passes the server filter but is correctly excluded client-side.
+- `mobile/components/FloodPin.tsx` — replaced two-tap flow (tap pin → callout → tap callout → detail) with single-tap `onPress` on Marker; removed Callout; added `tracksViewChanges={false}` to prevent all markers re-rasterising on every parent render.
+- `mobile/app/alert.tsx` — added `timeAgo(ts: Timestamp)` helper (just now / Xm ago / Xh ago / Xd ago) and a "Reported" MetaRow as the first row of the detail sheet.
+
+**Verification run:** `npx tsc --noEmit` in `mobile/` → 0 TypeScript errors.
+
+**Feature status:** `live-map` → `in_progress` (pending live device test).
+
+**What is NOT done (requires live device):**
+- Confirm pin appears in real time from a second device without refresh
+- Confirm pin colors match DEPTH_CONFIG on device
+- Manually set expiresAt to now in Firestore console → confirm pin disappears
+
+**Next best action:** Implement `corroboration` feature (priority 7) — Cloud Function logic already scaffolded in `functions/src/onReportCreate.ts`; need to verify the 3-report threshold and status transition.

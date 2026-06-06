@@ -15,7 +15,15 @@ export function useReports() {
     );
 
     const unsubscribe = onSnapshot(q, snapshot => {
-      setReports(snapshot.docs.map(d => ({ id: d.id, ...d.data() } as FloodReport)));
+      const now = Date.now();
+      setReports(
+        snapshot.docs
+          .map(d => ({ id: d.id, ...d.data() } as FloodReport))
+          // Client-side guard: Timestamp.now() in the query is static (evaluated
+          // once at subscription time). A document manually expired after that
+          // point passes the server filter but must be excluded here.
+          .filter(r => r.expiresAt.toMillis() > now)
+      );
       setLoading(false);
     });
 

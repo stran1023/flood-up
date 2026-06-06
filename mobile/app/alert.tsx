@@ -1,10 +1,19 @@
 import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { doc, getDoc, updateDoc, increment } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, increment, type Timestamp } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { DEPTH_CONFIG } from '../constants/depth';
 import type { FloodReport } from '../types';
+
+function timeAgo(ts: Timestamp): string {
+  const mins = Math.floor((Date.now() - ts.toMillis()) / 60_000);
+  if (mins < 1)  return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24)  return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
 
 export default function AlertScreen() {
   const { reportId } = useLocalSearchParams<{ reportId: string }>();
@@ -49,6 +58,7 @@ export default function AlertScreen() {
       </View>
 
       <View style={styles.meta}>
+        <MetaRow label="Reported"   value={timeAgo(report.reportedAt)} />
         <MetaRow label="Status"     value={report.status} />
         <MetaRow label="Reports"    value={`${report.corroborationCount} nearby`} />
         <MetaRow label="Trust"      value={`${report.trustScore} / 100`} />

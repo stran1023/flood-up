@@ -71,7 +71,7 @@
       "area": "map",
       "title": "Live map with real-time flood pins",
       "user_visible_behavior": "Map screen shows colored pins for all active (non-expired) reports. Pins update in real time via Firestore listener. Pin color matches DEPTH_CONFIG. Tapping a pin shows depth, time, and upvote/downvote buttons.",
-      "status": "not_started",
+      "status": "in_progress",
       "verification": [
         "Open map screen — no errors in console",
         "Submit a test report from a second device/account → pin appears on map without refresh",
@@ -79,7 +79,7 @@
         "Expire a report manually (set expiresAt to now) → pin disappears within one listener cycle",
         "Tap a pin → detail sheet shows depth label, time since report"
       ],
-      "evidence": "",
+      "evidence": "useReports.ts: onSnapshot with status in ['pending','confirmed'] + client-side expiresAt>now() guard (static Timestamp.now() in query is insufficient for mid-session expiry). FloodPin.tsx: single-tap onPress on Marker opens detail sheet directly; tracksViewChanges=false for performance; Callout removed. alert.tsx: added timeAgo() helper + Reported MetaRow showing time since reportedAt. TypeScript: 0 errors. Requires live device test to move to passing.",
       "notes": "useReports hook must filter by status in ['pending','confirmed'] and expiresAt > now()."
     },
     {
