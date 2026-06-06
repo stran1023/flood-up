@@ -7,7 +7,7 @@ import { RouteOverlay } from './RouteOverlay';
 import type { FloodReport } from '../types';
 import type { RouteResult } from '../hooks/useRoute';
 
-const floodZones = require('../assets/flood-zones.geojson') as FeatureCollection;
+const floodZones = require('../assets/flood-zones.json') as FeatureCollection;
 
 // Ho Chi Minh City city center — default region for SE Asia target market
 const HCMC_REGION = {
