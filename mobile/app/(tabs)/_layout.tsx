@@ -14,6 +14,7 @@ export default function TabLayout() {
 
   return (
     <Tabs
+      safeAreaInsets={{ bottom: 0 }}
       screenOptions={{
         headerShown: true,
         tabBarActiveTintColor: '#E24B4A',
