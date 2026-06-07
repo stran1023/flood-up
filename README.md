@@ -100,10 +100,8 @@ Reports start at trust score 70. Only confirmed reports (or high-severity single
 git clone <repo-url> flood-up
 cd flood-up
 cp mobile/.env.example mobile/.env   # fill in Firebase + Maps API keys
-./init.sh                            # installs deps, type-checks, deploys Firebase, starts Expo
+./init.sh                            # install deps + TypeScript check
 ```
-
-Scan the QR code in Expo Go to open the app on your phone.
 
 **`mobile/.env`**
 ```
@@ -116,11 +114,14 @@ EXPO_PUBLIC_FIREBASE_APP_ID=
 EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=
 ```
 
-**`init.sh` flags**
+**Deploy the Firebase backend** — required on first clone; after that only when you change `functions/`, `firestore.rules`, or `firestore.indexes.json`:
+```bash
+firebase deploy --only firestore:rules,firestore:indexes,functions
 ```
-./init.sh --verify     # type-check only, no deploy, no start
-./init.sh --no-deploy  # skip Firebase deploy, just start Expo
-./init.sh --no-start   # deploy only, do not launch Expo
+
+**Start the Expo dev server** and scan the QR code in Expo Go:
+```bash
+cd mobile && npx expo start --clear
 ```
 
 ---
