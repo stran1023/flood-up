@@ -9,8 +9,6 @@ export interface FloodReport {
   lng: number;
   geohash: string;
   depth: Depth;
-  photoUrl?: string;
-  photoVerified?: boolean | null;
   reportedAt: Timestamp;
   expiresAt: Timestamp;
   userId: string;

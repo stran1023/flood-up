@@ -5,18 +5,6 @@ import { getOpenMeteoRainfall } from './weatherCheck';
 import { sendNearbyNotifications } from './notifyNearby';
 import type { Depth, FloodReport } from './types';
 
-async function snapToRoad(lat: number, lng: number): Promise<boolean> {
-  const apiKey = process.env.GOOGLE_ROADS_API_KEY;
-  if (!apiKey) return true;
-  try {
-    const url = `https://roads.googleapis.com/v1/snapToRoads?path=${lat},${lng}&key=${apiKey}`;
-    const res = await fetch(url);
-    const json = (await res.json()) as { snappedPoints?: unknown[] };
-    return Array.isArray(json.snappedPoints) && json.snappedPoints.length > 0;
-  } catch {
-    return true; // fail open — SE Asian road data is incomplete
-  }
-}
 
 async function reverseGeocode(lat: number, lng: number): Promise<string | undefined> {
   try {
@@ -42,17 +30,13 @@ export const onReportCreate = onDocumentCreated(
 
     const now = Date.now();
 
-    const [onRoad, rainfall, lastReport, street] = await Promise.all([
-      snapToRoad(lat, lng),
+    const [rainfall, lastReport, street] = await Promise.all([
       getOpenMeteoRainfall(lat, lng),
       getLastReport(userId, reportId),
       reverseGeocode(lat, lng),
     ]);
 
     let trustScore = 70;
-
-    // GPS plausibility — soft penalty
-    if (!onRoad) trustScore -= 25;
 
     // Velocity check — only hard rejection
     if (lastReport) {

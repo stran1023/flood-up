@@ -54,7 +54,6 @@ service cloud.firestore {
         && request.resource.data.depth in ['ankle','knee','waist','chest'];
 
       // Any authenticated user can upvote/downvote
-      // Own report can update photoUrl
       allow update: if request.auth != null
         && (
           request.resource.data.diff(resource.data).affectedKeys()
@@ -97,11 +96,4 @@ EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=
 EXPO_PUBLIC_GOOGLE_DIRECTIONS_API_KEY=
 ```
 
-### `functions/.env`
-
-```
-ANTHROPIC_API_KEY=
-GOOGLE_ROADS_API_KEY=
-```
-
-Do not commit either `.env` file. Add both to `.gitignore`.
+Do not commit `.env`. Add it to `.gitignore`.

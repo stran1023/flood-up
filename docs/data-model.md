@@ -9,8 +9,6 @@ interface FloodReport {
   lng: number;
   geohash: string;                 // precision 7, used for radius queries
   depth: 'ankle' | 'knee' | 'waist' | 'chest';
-  photoUrl?: string;               // Firebase Storage URL
-  photoVerified?: boolean | null;  // true=yes, false=no, null=check failed, undefined=never attempted
   reportedAt: Timestamp;
   expiresAt: Timestamp;            // reportedAt + 6 hours
   userId: string;
@@ -20,7 +18,7 @@ interface FloodReport {
   status: 'pending' | 'confirmed' | 'disputed' | 'expired';
   corroborationCount: number;      // self-inclusive: this report + independent nearby reports
   weatherRainfallMm?: number;      // Open-Meteo reading at submit time
-  trustScore: number;              // starts at 60, adjusted by trust pipeline
+  trustScore: number;              // starts at 70, adjusted by trust pipeline
 }
 ```
 

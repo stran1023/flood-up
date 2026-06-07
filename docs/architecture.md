@@ -53,7 +53,6 @@ flood-up/
 │   │   ├── onReportCreate.ts    # Trigger: validate report + trust pipeline
 │   │   ├── notifyNearby.ts      # Geo-radius query + FCM dispatch
 │   │   ├── expireReports.ts     # Scheduled: expire reports older than 6h
-│   │   ├── verifyImage.ts       # Claude Vision image check (async)
 │   │   └── weatherCheck.ts     # Open-Meteo plausibility check
 │   ├── package.json
 │   └── tsconfig.json
