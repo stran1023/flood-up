@@ -20,7 +20,7 @@ Three independent reports in the same area within 30 minutes → **confirmed**. 
 
 ---
 
-## The three views
+## The two views
 
 ### Resident app — know before you go
 
@@ -37,12 +37,6 @@ Search a destination and the app highlights any flooded segments along your rout
 <!-- screenshot: one-tap report button in driver mode -->
 
 A persistent report button lets drivers submit a flood in one tap while stationary at a light. Every driver report strengthens the map for everyone else.
-
-### City authority dashboard — act before it escalates
-
-<!-- screenshot: authority dashboard heatmap -->
-
-Authorities see a live heatmap and a real-time report table. Twelve reports in the same district within 10 minutes signals a drainage emergency — dispatch a crew now, not after the hotline rings.
 
 ---
 
@@ -67,31 +61,23 @@ Reports start at trust score 70. Only confirmed reports (or high-severity single
 | Mobile | React Native (Expo) |
 | Backend | Firebase — Firestore, Auth, Cloud Functions, Storage |
 | Push notifications | Expo Notifications + FCM |
-| AI image check | Anthropic Claude (`claude-sonnet-4-6`) |
 | Weather | Open-Meteo (free, no key required) |
-| City dashboard | React + Vite |
 | Geo queries | geofire-common (geohash radius) |
 
 ---
 
 ## Getting started
 
-**Prerequisites:** Node.js 18+, Firebase CLI, Expo CLI, a Firebase project with Firestore / Auth / Storage / Functions enabled.
+**Prerequisites:** Node.js 18+, Firebase CLI, a Firebase project with Firestore / Auth / Storage / Functions enabled.
 
 ```bash
 git clone <repo-url> flood-up
 cd flood-up
-./init.sh
-
-cp mobile/.env.example mobile/.env        # Firebase keys + Maps API key
-
-firebase deploy --only firestore:rules,firestore:indexes
-
-# Three terminals:
-cd mobile && npx expo start
-cd dashboard && npx vite
-cd functions && npm run serve
+cp mobile/.env.example mobile/.env   # fill in Firebase + Maps API keys
+./init.sh                            # installs deps, type-checks, deploys Firebase, starts Expo
 ```
+
+Scan the QR code in Expo Go to open the app on your phone.
 
 **`mobile/.env`**
 ```
@@ -104,6 +90,13 @@ EXPO_PUBLIC_FIREBASE_APP_ID=
 EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=
 ```
 
+**`init.sh` flags**
+```
+./init.sh --verify     # type-check only, no deploy, no start
+./init.sh --no-deploy  # skip Firebase deploy, just start Expo
+./init.sh --no-start   # deploy only, do not launch Expo
+```
+
 ---
 
 ## Repository structure
@@ -112,7 +105,6 @@ EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=
 flood-up/
 ├── mobile/       # Expo React Native app (residents + drivers)
 ├── functions/    # Firebase Cloud Functions (trust pipeline, alerts, expiry)
-├── dashboard/    # City authority web dashboard (React + Vite)
 └── docs/         # Architecture, data model, core flows
 ```
 
