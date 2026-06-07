@@ -60,7 +60,7 @@ Each user account tracks reports submitted and trust score. Trust score rises wh
 
 ### Route search with flood warning
 
-<video src="pics/7911630965911.mp4" controls width="300"></video>
+[<video src="pics/7911630965911.mp4" controls width="300"></video>](https://github.com/user-attachments/assets/14cc43c7-c9b8-4428-bc85-c5f1993116ce)
 
 Search any destination and the app checks your route against active flood reports. Flooded road segments are highlighted in red, and a warning banner appears so you can reroute before you leave.
 
