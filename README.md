@@ -34,14 +34,6 @@ One tap to open the report form. GPS fills in your location automatically — ju
 
 ---
 
-### Route search with flood warning
-
-<video src="pics/7911630965911.mp4" controls width="300"></video>
-
-Search any destination and the app checks your route against active flood reports. Flooded road segments are highlighted in red, and a warning banner appears so you can reroute before you leave.
-
----
-
 ### Reports list
 
 <img src="pics/z7911630673584_17bf8f227c8572021458f958aea4709d.jpg" width="300">
@@ -63,6 +55,14 @@ Tap any report to see the full detail — depth, status, number of nearby corrob
 <img src="pics/z7911630677092_7d463e95e2783db41ab6504921cf12bc.jpg" width="300">
 
 Each user account tracks reports submitted and trust score. Trust score rises when your reports get corroborated by others, and is used by the pipeline to weight future reports. Home location determines which flood alerts you receive as push notifications.
+
+---
+
+### Route search with flood warning
+
+<video src="pics/7911630965911.mp4" controls width="300"></video>
+
+Search any destination and the app checks your route against active flood reports. Flooded road segments are highlighted in red, and a warning banner appears so you can reroute before you leave.
 
 ---
 
